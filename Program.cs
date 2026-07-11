@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+// Enable Razor Pages
+builder.Services.AddRazorPages();
 
 // Add Entity Framework Core
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -36,5 +38,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+// Map Razor Pages
+app.MapRazorPages();
 
 app.Run();

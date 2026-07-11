@@ -1,0 +1,16 @@
+﻿@model ZerodaTrade.Models.Group
+
+<form asp-action="Delete" method="post" class="ajax-form">
+    <input type="hidden" asp-for="Id" />
+    <div class="modal-header">
+        <h5 class="modal-title">Delete Group</h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+    </div>
+    <div class="modal-body">
+        <p>Are you sure you want to delete <strong>@Model.Name</strong>?</p>
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+    </div>
+</form>

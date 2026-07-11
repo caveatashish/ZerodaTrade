@@ -1,0 +1,88 @@
+﻿@model IEnumerable<ZerodaTrade.Models.Group>
+
+<div class="row">
+    <!-- Left side: Group list -->
+    <div class="col-md-4">
+        <h4>Groups</h4>
+        <ul class="list-group">
+            @foreach (var group in Model)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @group.Name
+                    <div>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#groupModal"
+                                data-url="@Url.Action("Edit", "Groups", new { id = group.Id })">
+                            Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#groupModal"
+                                data-url="@Url.Action("Delete", "Groups", new { id = group.Id })">
+                            Delete
+                        </button>
+                    </div>
+                </li>
+            }
+        </ul>
+        <button class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#groupModal"
+                data-url="@Url.Action("Create", "Groups")">
+            Add Group
+        </button>
+    </div>
+
+    <!-- Right side: Modal -->
+    <div class="col-md-8">
+        <div class="modal fade" id="groupModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <!-- Content will be loaded via AJAX -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Load modal content via AJAX
+        $('#groupModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var url = button.data('url');
+            var modal = $(this);
+            $.get(url, function (data) {
+                modal.find('.modal-content').html(data);
+
+                // Re-parse validation for dynamically loaded content
+             //   $.validator.unobtrusive.parse(modal.find('form'));
+            });
+        });
+
+        // Handle AJAX form submission
+        $(document).on('submit', '.ajax-form', function (event) {
+            event.preventDefault();
+            var form = $(this);
+            var modalEl = document.getElementById('groupModal');
+
+            $.ajax({
+                url: form.attr('action'),
+                type: form.attr('method'),
+                data: form.serialize(),
+                success: function (result) {
+                    // Close modal using Bootstrap 5 API
+                    var bsModal = bootstrap.Modal.getInstance(modalEl);
+                    if (!bsModal) {
+                        bsModal = new bootstrap.Modal(modalEl);
+                    }
+                    bsModal.hide();
+
+                    // Refresh group list
+                    $.get('@Url.Action("Index", "Groups")', function (data) {
+                        var newList = $(data).find('.list-group');
+                        $('.list-group').replaceWith(newList);
+                    });
+                },
+                error: function () {
+                    alert("Something went wrong. Please try again.");
+                }
+            });
+        });
+    </script>
+}
