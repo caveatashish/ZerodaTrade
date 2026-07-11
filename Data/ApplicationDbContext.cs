@@ -17,12 +17,7 @@ namespace ZerodaTrade.Data
         public DbSet<DailyTrade> DailyTrades{ get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Script-Trade relationship based on Name and Instrument
-            modelBuilder.Entity<Trade>()
-                .HasOne<Script>()
-                .WithMany()
-                .HasPrincipalKey(s => s.Name)   // Script.Name is the principal key
-                .HasForeignKey(t => t.Instrument); // Trade.Instument is the foreign key
+          
 
             modelBuilder.Entity<DailyTrade>(entity =>
             {

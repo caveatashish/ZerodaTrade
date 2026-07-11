@@ -1,0 +1,11 @@
+@model ZerodaTrade.Models.Script
+
+<tr id="row-@Model.Id">
+    <td>@Model.Name</td>
+    <td>@(Model.Status ? "Active" : "Inactive")</td>
+    <td>@Model.Group?.Name</td>
+    <td>
+        <button class="btn btn-sm btn-warning" onclick="openEditModal(@Model.Id)">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="openDeleteModal(@Model.Id)">Delete</button>
+    </td>
+</tr>

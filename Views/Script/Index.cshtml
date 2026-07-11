@@ -127,7 +127,6 @@
         });
     }
     function submitEditForm() {
-        var form = $('#editForm');
         var script = {
             Id: $('#editId').val(),
             Name: $('#editName').val(),
@@ -142,19 +141,15 @@
             data: JSON.stringify(script),
             success: function (res) {
                 if (res.success) {
-                    // refresh only the table body via AJAX
-                    refreshScripts();
+                    // fetch updated single row HTML and replace existing row
+                    $.get('/Script/Row/' + script.Id, function (rowHtml) {
+                        $('#row-' + script.Id).replaceWith(rowHtml);
+                        $('#editModal').modal('hide');
+                    });
                 } else {
                     alert(res.message);
                 }
             }
-        });
-    }
-
-    function refreshScripts() {
-        $.get('/Script/List', function (html) {
-            $('#scriptTable tbody').html(html);
-            $('#editModal').modal('hide');
         });
     }
 

@@ -44,9 +44,20 @@ namespace ZerodaTrade.Controllers
             return PartialView("_Edit", script);
         }
 
+        // Return a single table row partial for the given script id
+        [HttpGet]
+        public async Task<IActionResult> Row(int id)
+        {
+            var script = await _context.Scripts.Include(s => s.Group).FirstOrDefaultAsync(s => s.Id == id);
+            if (script == null) return NotFound();
+            return PartialView("_ScriptRow", script);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Script script)
         {
+            // navigation property 'Group' may be null when binding from JSON; ignore it for validation
+            ModelState.Remove("Group");
             if (ModelState.IsValid)
             {
                 _context.Add(script);
@@ -59,9 +70,19 @@ namespace ZerodaTrade.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit([FromBody] Script script)
         {
+            // navigation property 'Group' may be null when binding from JSON; ignore it for validation
+            ModelState.Remove("Group");
             if (ModelState.IsValid)
             {
-                _context.Update(script);
+                // load tracked entity and apply changes to avoid issues with alternate keys
+                var existing = await _context.Scripts.FindAsync(script.Id);
+                if (existing == null) return Json(new { success = false, message = "Script not found" });
+
+                // update scalar properties explicitly
+                existing.Name = script.Name;
+                existing.Status = script.Status;
+                existing.GroupId = script.GroupId;
+
                 await _context.SaveChangesAsync();
                 return Json(new { success = true, message = "Script updated successfully" });
             }

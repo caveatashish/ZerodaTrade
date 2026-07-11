@@ -20,6 +20,7 @@ namespace ZerodaTrade.Models
     }
     public class Script
     {
+        [Key]
         public int Id { get; set; }
 
         [Required]
@@ -30,6 +31,8 @@ namespace ZerodaTrade.Models
         public int GroupId { get; set; }
         // Navigation property: Reference to the group
         public Group Group { get; set; }
+
+        public ICollection<Trade> Trades { get; set; } = new List<Trade>();
 
     }
     public class Trade
@@ -61,6 +64,10 @@ namespace ZerodaTrade.Models
         // Optional audit fields
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
+
+        public int ScriptId { get; set; }
+        // Navigation property: Reference to the group
+        public Script Script { get; set; }
     }
 
     public class DailyTrade
