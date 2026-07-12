@@ -1,0 +1,49 @@
+@model IEnumerable<ZerodaTrade.Models.Trade>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="border rounded p-2" style="width:100%; max-height:60vh; overflow-y:auto;">
+        <div>No trades found for selected day.</div>
+    </div>
+}
+else
+{
+    <div class="border rounded p-2" style="width:100%; max-height:60vh; overflow-y:auto;">
+        <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Avg Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ DateTime? lastDate = null; }
+            @foreach(var t in Model)
+            {
+                var currentDate = t.FillTime.Date;
+                if (lastDate.HasValue && currentDate != lastDate.Value)
+                {
+                    <tr>
+                        <td colspan="4" class="border-0">
+                            <div style="height:8px; width:40%; margin:6px auto; background:#e9ecef; border-radius:4px;"></div>
+                        </td>
+                    </tr>
+                }
+
+                var typeLower = t.Type?.ToLowerInvariant();
+                var cls = typeLower == "buy" ? "text-success" : (typeLower == "sell" ? "text-danger" : "");
+                <tr>
+                    <td>@t.FillTime.ToString("yyyy-MM-dd")</td>
+                    <td class="@cls">@t.Type.ToUpper()</td>
+                    <td class="@cls">@t.Qty</td>
+                    <td class="@cls">@String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0}", t.AvgPrice)</td>
+                </tr>
+
+                lastDate = currentDate;
+            }
+        </tbody>
+        </table>
+    </div>
+}

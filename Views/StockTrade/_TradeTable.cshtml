@@ -2,37 +2,47 @@
 
 @if (Model == null || !Model.Any())
 {
-    <div>No trades found for this instrument.</div>
+    <div style="width:100%; max-height:60vh; overflow-y:auto;">
+        <div>No trades found for this instrument.</div>
+    </div>
 }
 else
 {
-    <table class="table table-sm table-bordered">
+    <div style="width:100%; max-height:60vh; overflow-y:auto;">
+        <table class="table table-sm table-bordered table-hover">
         <thead>
             <tr>
-                <th width="20%">Date</th>
-                <th>Instrument</th>
-                <th>Buy Qty</th>
-                <th>Buy Average</th>
-                <th>Buy Total</th>
-                <th>Sell Qty</th>
-                <th>Sell Average</th>
-                <th>Sell Total</th>
+                <th rowspan="2" width="20%" style="text-align:center; vertical-align:middle;">Date</th>
+                <th rowspan="2" style="text-align:center; vertical-align:middle;">Instrument</th>
+
+                <th colspan="3" style="text-align:center; color:green;">BUY</th>
+                <th colspan="3" style="text-align:center; color:red;">SELL</th>
+            </tr>
+            <tr>
+                <th>Qty</th>
+                <th>Average</th>
+                <th>Total</th>
+                <th>Qty</th>
+                <th>Average</th>
+                <th>Total</th>
             </tr>
         </thead>
+
         <tbody>
             @foreach(var r in Model)
             {
-                <tr>
+                <tr class="summary-row" data-date="@r.Date.ToString("yyyy-MM-dd")" data-instrument="@r.Instrument" style="cursor:pointer;">
                     <td>@r.Date.ToString("yyyy-MM-dd")</td>
                     <td>@r.Instrument</td>
                     <td>@(r.BuyQty == 0 ? string.Empty : r.BuyQty.ToString())</td>
-                    <td>@(r.BuyAverage == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N2}", r.BuyAverage))</td>
-                    <td>@(r.BuyTotal == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N2}", r.BuyTotal))</td>
+                    <td>@(r.BuyAverage == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0}", r.BuyAverage))</td>
+                    <td>@(r.BuyTotal == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0}", r.BuyTotal))</td>
                     <td>@(r.SellQty == 0 ? string.Empty : r.SellQty.ToString())</td>
-                    <td>@(r.SellAverage == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N2}", r.SellAverage))</td>
-                    <td>@(r.SellTotal == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N2}", r.SellTotal))</td>
+                    <td>@(r.SellAverage == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0}", r.SellAverage))</td>
+                    <td>@(r.SellTotal == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0}", r.SellTotal))</td>
                 </tr>
             }
         </tbody>
-    </table>
+        </table>
+    </div>
 }

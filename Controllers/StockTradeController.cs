@@ -43,7 +43,7 @@ namespace ZerodaTrade.Controllers
 
             var summary = trades
                 .GroupBy(t => t.FillTime.Date)
-                .OrderByDescending(g => g.Key) 
+                .OrderByDescending(g => g.Key)
                 .Select(g => new Models.StockTradeSummary
                 {
                     Date = g.Key,
@@ -63,6 +63,27 @@ namespace ZerodaTrade.Controllers
             }
 
             return PartialView("_TradeTable", summary);
+        }
+
+        // return detailed trades for a given instrument and date (date format yyyy-MM-dd)
+        [HttpGet]
+        public async Task<IActionResult> GetDayTrades(string instrument, string date)
+        {
+            if (string.IsNullOrWhiteSpace(instrument) || string.IsNullOrWhiteSpace(date)) return BadRequest();
+
+            if (!DateTime.TryParseExact(date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var theDate))
+            {
+                return BadRequest("Invalid date");
+            }
+
+            var trades = await _context.Trades
+                          .Where(t => t.Instrument == instrument && t.FillTime.Date <= theDate.Date)
+                          .OrderByDescending(t => t.FillTime)   // latest first
+                          .Take(15)                             // only last 15 records
+                          .ToListAsync();
+
+
+            return PartialView("_DayTrades", trades);
         }
     }
 }

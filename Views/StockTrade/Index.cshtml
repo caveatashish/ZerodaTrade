@@ -4,46 +4,56 @@
     ViewData["Title"] = "Stock Trades";
 }
 
-<h2>Stock Trades</h2>
+<div class="d-flex align-items-center mb-3">
+    <h2 class="me-4">Stock Trades</h2>
+    <div id="groupList" class="d-flex flex-row flex-nowrap overflow-auto border rounded p-2 ms-auto" style="min-width:300px; max-width:70%">
+        @foreach (var g in Model)
+        {
+            <div class="form-check me-3">
+                <input class="form-check-input group-checkbox" type="checkbox" value="@g.Id" id="group-@g.Id" />
+                <label class="form-check-label" for="group-@g.Id">@g.Name</label>
+            </div>
+        }
+    </div>
+</div>
 
 <div class="row">
-    <div class="col-md-3">
-        <h5>Groups</h5>
-        <div id="groupList">
-            @foreach (var g in Model)
-            {
-                <div class="form-check">
-                    <input class="form-check-input group-checkbox" type="checkbox" value="@g.Id" id="group-@g.Id" />
-                    <label class="form-check-label" for="group-@g.Id">@g.Name</label>
-                </div>
-            }
-        </div>
-    </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <h5>Stocks</h5>
         <div id="stockList">
             <!-- loaded via AJAX -->
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-7">
         <h5>Trades</h5>
         <div id="tradeTable">
             <!-- loaded via AJAX -->
         </div>
     </div>
+    <div class="col-md-3">
+        <h5>Day Trade</h5>
+        <div id="SpecififDayTrade">
+            <!-- detailed trades for selected day will load here -->
+        </div>
+    </div>
 </div>
+
+
 
 <script>
     $(function(){
-        // when a group checkbox changes, load stocks for that group (first checked)
+        // ensure only one group checkbox can be selected; load stocks for selected group
         $(document).on('change', '.group-checkbox', function(){
+            // uncheck other checkboxes so only one remains checked
+            $('.group-checkbox').not(this).prop('checked', false);
+
             var checked = $('.group-checkbox:checked');
             if(checked.length === 0){
                 $('#stockList').html('');
                 $('#tradeTable').html('');
                 return;
             }
-            var groupId = checked.first().val();
+            var groupId = checked.val();
             $.get('/StockTrade/GetStocks?groupId=' + groupId, function(html){
                 $('#stockList').html(html);
                 $('#tradeTable').html('');
@@ -56,6 +66,18 @@
             var instrument = $(this).data('instrument');
             $.get('/StockTrade/GetTrades?instrument=' + encodeURIComponent(instrument), function(html){
                 $('#tradeTable').html(html);
+                // clear specific day details when new summary loads
+                $('#SpecififDayTrade').html('');
+            });
+        });
+
+        // when clicking on a summary row load detailed trades for that day
+        $(document).on('click', '#tradeTable .summary-row', function(){
+            var instrument = $(this).data('instrument');
+            var date = $(this).data('date');
+            if(!instrument || !date) return;
+            $.get('/StockTrade/GetDayTrades', { instrument: instrument, date: date }, function(html){
+                $('#SpecififDayTrade').html(html);
             });
         });
     });
