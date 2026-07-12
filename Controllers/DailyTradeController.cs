@@ -59,10 +59,13 @@ namespace ZerodaTrade.Controllers
                     var tradeId = Convert.ToInt64( parts[0]);
 
                     DateTime fillTime;
-                    if (!DateTime.TryParse(parts[1], CultureInfo.InvariantCulture, DateTimeStyles.None, out fillTime))
+                    var dateStr = parts[1].Trim();
+                    // Try dd-MM-yyyy formats first (day-month-year)
+                    var dateFormats = new[] { "dd-MM-yyyy", "d-M-yyyy", "dd-MM-yyyy HH:mm:ss", "d-M-yyyy H:m:s", "dd/MM/yyyy", "d/M/yyyy" };
+                    if (!DateTime.TryParseExact(dateStr, dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out fillTime))
                     {
-                        // try parsing with local format
-                        DateTime.TryParse(parts[1], out fillTime);
+                        // fallback to general parse
+                        DateTime.TryParse(dateStr, out fillTime);
                     }
 
                     var type = parts[2];

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ZerodaTrade.Models
@@ -37,7 +38,12 @@ namespace ZerodaTrade.Models
     }
     public class Trade
     {
+        // New numeric primary key with identity (auto-increment)
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
+
+        // Legacy trade identifier (kept for compatibility) — not the EF primary key
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long TradeId { get; set; }
 
@@ -104,3 +110,5 @@ namespace ZerodaTrade.Models
 
 
 }
+
+

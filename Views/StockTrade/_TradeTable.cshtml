@@ -1,0 +1,38 @@
+@model IEnumerable<ZerodaTrade.Models.StockTradeSummary>
+
+@if (Model == null || !Model.Any())
+{
+    <div>No trades found for this instrument.</div>
+}
+else
+{
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th width="20%">Date</th>
+                <th>Instrument</th>
+                <th>Buy Qty</th>
+                <th>Buy Average</th>
+                <th>Buy Total</th>
+                <th>Sell Qty</th>
+                <th>Sell Average</th>
+                <th>Sell Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var r in Model)
+            {
+                <tr>
+                    <td>@r.Date.ToString("yyyy-MM-dd")</td>
+                    <td>@r.Instrument</td>
+                    <td>@(r.BuyQty == 0 ? string.Empty : r.BuyQty.ToString())</td>
+                    <td>@(r.BuyAverage == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N2}", r.BuyAverage))</td>
+                    <td>@(r.BuyTotal == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N2}", r.BuyTotal))</td>
+                    <td>@(r.SellQty == 0 ? string.Empty : r.SellQty.ToString())</td>
+                    <td>@(r.SellAverage == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N2}", r.SellAverage))</td>
+                    <td>@(r.SellTotal == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N2}", r.SellTotal))</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

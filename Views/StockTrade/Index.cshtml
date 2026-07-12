@@ -1,0 +1,62 @@
+@model IEnumerable<ZerodaTrade.Models.Group>
+
+@{
+    ViewData["Title"] = "Stock Trades";
+}
+
+<h2>Stock Trades</h2>
+
+<div class="row">
+    <div class="col-md-3">
+        <h5>Groups</h5>
+        <div id="groupList">
+            @foreach (var g in Model)
+            {
+                <div class="form-check">
+                    <input class="form-check-input group-checkbox" type="checkbox" value="@g.Id" id="group-@g.Id" />
+                    <label class="form-check-label" for="group-@g.Id">@g.Name</label>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-md-3">
+        <h5>Stocks</h5>
+        <div id="stockList">
+            <!-- loaded via AJAX -->
+        </div>
+    </div>
+    <div class="col-md-6">
+        <h5>Trades</h5>
+        <div id="tradeTable">
+            <!-- loaded via AJAX -->
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function(){
+        // when a group checkbox changes, load stocks for that group (first checked)
+        $(document).on('change', '.group-checkbox', function(){
+            var checked = $('.group-checkbox:checked');
+            if(checked.length === 0){
+                $('#stockList').html('');
+                $('#tradeTable').html('');
+                return;
+            }
+            var groupId = checked.first().val();
+            $.get('/StockTrade/GetStocks?groupId=' + groupId, function(html){
+                $('#stockList').html(html);
+                $('#tradeTable').html('');
+            });
+        });
+
+        // when clicking on a stock link (delegated)
+        $(document).on('click', '.stock-link', function(e){
+            e.preventDefault();
+            var instrument = $(this).data('instrument');
+            $.get('/StockTrade/GetTrades?instrument=' + encodeURIComponent(instrument), function(html){
+                $('#tradeTable').html(html);
+            });
+        });
+    });
+</script>
