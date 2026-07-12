@@ -1,201 +1,168 @@
-using System.Globalization;
-using System.Text;
+﻿
 using Microsoft.AspNetCore.Mvc;
 using ZerodaTrade.Data;
 using ZerodaTrade.Models;
+using Microsoft.AspNetCore.Http;
+using System.Globalization;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
+
 
 namespace ZerodaTrade.Controllers
 {
     public class DailyTradeController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly ILogger<DailyTradeController> _logger;
 
-        public DailyTradeController(ApplicationDbContext context, ILogger<DailyTradeController> logger)
+        public DailyTradeController(ApplicationDbContext context)
         {
             _context = context;
-            _logger = logger;
         }
 
         [HttpGet]
-        public IActionResult Upload()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var rows = await _context.DailyTrades.OrderByDescending(d => d.CreatedDate).Take(500).ToListAsync();
+            return View(rows);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UploadFile(IFormFile file)
+        public async Task<IActionResult> Index(IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
-                ModelState.AddModelError(string.Empty, "Please select a CSV file to upload.");
-                return View("Upload");
+                ViewBag.Error = "Please select a CSV file.";
+                // after import show all rows (or recently imported)
+                var recent = await _context.DailyTrades.OrderByDescending(d => d.CreatedDate).Take(500).ToListAsync();
+                return View(recent);
             }
 
-            if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            var trades = new List<DailyTrade>();
+            using (var stream = file.OpenReadStream())
+            using (var reader = new System.IO.StreamReader(stream))
             {
-                ModelState.AddModelError(string.Empty, "Only .csv files are allowed.");
-                return View("Upload");
+                // read header
+                var headerLine = await reader.ReadLineAsync();
+                // simple CSV parsing: supports quoted values
+                long counter = 0;
+                while (!reader.EndOfStream)
+                {
+                    var line = await reader.ReadLineAsync();
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    var parts = ParseCsvLine(line);
+
+                    // Expected columns (order): FillTime,Type,Instrument,CNC,Qty,AvgPrice
+                    if (parts.Length < 6) continue;
+
+                    var tradeId = Convert.ToInt64( parts[0]);
+
+                    DateTime fillTime;
+                    if (!DateTime.TryParse(parts[1], CultureInfo.InvariantCulture, DateTimeStyles.None, out fillTime))
+                    {
+                        // try parsing with local format
+                        DateTime.TryParse(parts[1], out fillTime);
+                    }
+
+                    var type = parts[2];
+                    var instrument = parts[3];
+
+                    bool? cnc = null;
+                    if (!string.IsNullOrWhiteSpace(parts[4]))
+                    {
+                        if (bool.TryParse(parts[3], out var b)) cnc = b;
+                        else if (int.TryParse(parts[3], out var iVal)) cnc = iVal != 0;
+                    }
+
+                    int qty = 0;
+                    int.TryParse(parts[5], out qty);
+
+                    decimal avgPrice = 0;
+                    decimal.TryParse(parts[6], NumberStyles.Any, CultureInfo.InvariantCulture, out avgPrice);
+
+                    counter++;
+                    var trade = new DailyTrade
+                    {
+                        // TradeId is not DB-generated in this model; generate unique value
+                        TradeId = tradeId,
+                        FillTime = fillTime,
+                        Type = type,
+                        Instrument = instrument,
+                        CNC = cnc,
+                        Qty = qty,
+                        AvgPrice = avgPrice,
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedDate = DateTime.UtcNow
+                    };
+
+                    trades.Add(trade);
+                }
             }
 
-            var imported = 0;
-            var updated = 0;
-            var failed = 0;
-            var errors = new List<string>();
+            if (trades.Count > 0)
+            {
+                await _context.DailyTrades.AddRangeAsync(trades);
+                await _context.SaveChangesAsync();
+                ViewBag.Success = $"Imported {trades.Count} rows.";
+            }
+            else
+            {
+                ViewBag.Error = "No valid rows found in CSV.";
+            }
+
+            // after import show all rows (or recently imported)
+            var all = await _context.DailyTrades.OrderByDescending(d => d.CreatedDate).Take(500).ToListAsync();
+            return View(all);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TransferAndTruncate()
+        {
+            // check if there are rows to transfer
+            var hasRows = await _context.DailyTrades.AnyAsync();
+            if (!hasRows)
+            {
+                TempData["Error"] = "No rows in DailyTrades to transfer.";
+                return RedirectToAction("Index");
+            }
 
             try
             {
-                using var stream = file.OpenReadStream();
-                using var reader = new StreamReader(stream, Encoding.UTF8);
+                // Execute stored procedure to transfer rows to Trades
+                await _context.Database.ExecuteSqlRawAsync("EXEC TransferDailyToTrades");
 
-                string? line;
-                var lineNumber = 0;
-                while ((line = await reader.ReadLineAsync()) != null)
-                {
-                    lineNumber++;
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
+                // Truncate the DailyTrades table
+                await _context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE DailyTrades");
 
-                    // Skip header if detected
-                    if (lineNumber == 1 && (line.Contains("Trade", StringComparison.OrdinalIgnoreCase) || line.Contains("Fill", StringComparison.OrdinalIgnoreCase)))
-                        continue;
-
-                    var parts = SplitCsvLine(line);
-
-                    // Expecting columns: Trade ID, Fill time, Type, Instrument, CNC, Qty., Avg. Price
-                    if (parts.Length < 7)
-                    {
-                        errors.Add($"Line {lineNumber}: Unexpected column count ({parts.Length}).");
-                        failed++;
-                        continue;
-                    }
-
-                    try
-                    {
-                        var tradeIdRaw = parts[0].Trim();
-                        if (!long.TryParse(tradeIdRaw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var tradeId))
-                        {
-                            errors.Add($"Line {lineNumber}: Invalid Trade ID '{tradeIdRaw}'.");
-                            failed++;
-                            continue;
-                        }
-
-                        var fillTimeRaw = parts[1].Trim();
-                        if (!DateTime.TryParse(fillTimeRaw, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fillTime))
-                        {
-                            // Try common formats
-                            var formats = new[] { "M/d/yyyy H:mm", "M/d/yyyy H:mm:ss", "M/d/yyyy" };
-                            if (!DateTime.TryParseExact(fillTimeRaw, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out fillTime))
-                            {
-                                errors.Add($"Line {lineNumber}: Invalid Fill Time '{fillTimeRaw}'.");
-                                failed++;
-                                continue;
-                            }
-                        }
-
-                        var type = parts[2].Trim();
-                        var instrument = parts[3].Trim();
-
-                        // CNC column may be empty or contain 'CNC' or 'Yes'
-                        var cncRaw = parts[4].Trim();
-                        bool? cnc = null;
-                        if (!string.IsNullOrEmpty(cncRaw))
-                        {
-                            if (cncRaw.Equals("CNC", StringComparison.OrdinalIgnoreCase) || cncRaw.Equals("Yes", StringComparison.OrdinalIgnoreCase) || cncRaw == "1")
-                                cnc = true;
-                            else if (cncRaw.Equals("No", StringComparison.OrdinalIgnoreCase) || cncRaw == "0")
-                                cnc = false;
-                        }
-
-                        var qtyRaw = parts[5].Trim();
-                        if (!int.TryParse(qtyRaw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var qty))
-                        {
-                            errors.Add($"Line {lineNumber}: Invalid Qty '{qtyRaw}'.");
-                            failed++;
-                            continue;
-                        }
-
-                        var priceRaw = parts[6].Trim();
-                        if (!decimal.TryParse(priceRaw, NumberStyles.Any, CultureInfo.InvariantCulture, out var avgPrice))
-                        {
-                            errors.Add($"Line {lineNumber}: Invalid AvgPrice '{priceRaw}'.");
-                            failed++;
-                            continue;
-                        }
-
-                        // Upsert logic
-                        var existing = await _context.DailyTrades.FindAsync(tradeId);
-                        if (existing != null)
-                        {
-                            existing.FillTime = fillTime;
-                            existing.Type = type;
-                            existing.Instrument = instrument;
-                            existing.CNC = cnc;
-                            existing.Qty = qty;
-                            existing.AvgPrice = avgPrice;
-                            existing.ModifiedDate = DateTime.UtcNow;
-                            _context.DailyTrades.Update(existing);
-                            updated++;
-                        }
-                        else
-                        {
-                            var dt = new DailyTrade
-                            {
-                                TradeId = tradeId,
-                                FillTime = fillTime,
-                                Type = type,
-                                Instrument = instrument,
-                                CNC = cnc,
-                                Qty = qty,
-                                AvgPrice = avgPrice,
-                                CreatedDate = DateTime.UtcNow,
-                                ModifiedDate = DateTime.UtcNow
-                            };
-                            await _context.DailyTrades.AddAsync(dt);
-                            imported++;
-                        }
-                    }
-                    catch (Exception exRow)
-                    {
-                        _logger.LogError(exRow, "Error processing line {LineNumber}", lineNumber);
-                        errors.Add($"Line {lineNumber}: {exRow.Message}");
-                        failed++;
-                    }
-                }
-
-                await _context.SaveChangesAsync();
+                TempData["Success"] = "Transferred rows to Trades and truncated DailyTrades.";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing uploaded CSV");
-                ModelState.AddModelError(string.Empty, "An error occurred while processing the CSV file.");
-                return View("Upload");
+                // log or return error
+                TempData["Error"] = "Error during transfer: " + ex.Message;
             }
 
-            TempData["UploadResult"] = $"Imported: {imported}, Updated: {updated}, Failed: {failed}";
-            if (errors.Any())
-                TempData["UploadErrors"] = string.Join("\n", errors);
-
-            return RedirectToAction(nameof(Upload));
+            return RedirectToAction("Index");
         }
 
-        private static string[] SplitCsvLine(string line)
+        // very small CSV parser supporting quoted values
+        private static string[] ParseCsvLine(string line)
         {
-            var fields = new List<string>();
-            var sb = new StringBuilder();
+            var parts = new List<string>();
             bool inQuotes = false;
-
+            var current = new System.Text.StringBuilder();
             for (int i = 0; i < line.Length; i++)
             {
-                char c = line[i];
+                var c = line[i];
                 if (c == '"')
                 {
-                    // Handle escaped quote
+                    // peek next char for escaped quote
                     if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
                     {
-                        sb.Append('"');
-                        i++; // skip the escaped quote
+                        current.Append('"');
+                        i++; // skip escaped quote
                     }
                     else
                     {
@@ -204,17 +171,16 @@ namespace ZerodaTrade.Controllers
                 }
                 else if (c == ',' && !inQuotes)
                 {
-                    fields.Add(sb.ToString());
-                    sb.Clear();
+                    parts.Add(current.ToString());
+                    current.Clear();
                 }
                 else
                 {
-                    sb.Append(c);
+                    current.Append(c);
                 }
             }
-
-            fields.Add(sb.ToString());
-            return fields.ToArray();
+            parts.Add(current.ToString());
+            return parts.Select(p => p.Trim()).ToArray();
         }
     }
 }

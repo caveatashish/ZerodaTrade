@@ -17,7 +17,6 @@ namespace ZerodaTrade.Data
         public DbSet<DailyTrade> DailyTrades{ get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-          
 
             modelBuilder.Entity<DailyTrade>(entity =>
             {
@@ -32,7 +31,6 @@ namespace ZerodaTrade.Data
                 entity.Property(e => e.ModifiedDate);
             });
         }
-
       
     }
 }

@@ -1,0 +1,65 @@
+@model IEnumerable<ZerodaTrade.Models.DailyTrade>
+@{
+    ViewData["Title"] = "Upload Daily Trades";
+}
+
+<h2>Upload Daily Trades CSV</h2>
+
+@if(ViewBag.Error != null){
+    <div class="alert alert-danger">@ViewBag.Error</div>
+}
+@if(ViewBag.Success != null){
+    <div class="alert alert-success">@ViewBag.Success</div>
+}
+
+<form asp-controller="DailyTrade" asp-action="Index" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label for="file">CSV File</label>
+        <input type="file" name="file" id="file" accept=".csv" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary">Upload</button>
+    @Html.AntiForgeryToken()
+</form>
+<form asp-action="TransferAndTruncate" method="post" class="mt-3">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-warning">Transfer to Trades and Truncate DailyTrades</button>
+</form>
+
+<div class="mt-4">
+    <p>Expected CSV columns (order): <strong>FillTime,Type,Instrument,CNC,Qty,AvgPrice</strong></p>
+    <p>Date format is flexible; numeric fields use invariant culture for decimals.</p>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <h3 class="mt-4">Imported Daily Trades (showing recent)</h3>
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th>TradeId</th>
+                <th>FillTime</th>
+                <th>Type</th>
+                <th>Instrument</th>
+                <th>CNC</th>
+                <th>Qty</th>
+                <th>AvgPrice</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td>@t.TradeId</td>
+                    <td>@t.FillTime.ToString("s")</td>
+                    <td>@t.Type</td>
+                    <td>@t.Instrument</td>
+                    <td>@(t.CNC.HasValue ? (t.CNC.Value ? "Yes" : "No") : "")</td>
+                    <td>@t.Qty</td>
+                    <td>@t.AvgPrice</td>
+                    <td>@t.CreatedDate.ToString("s")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
