@@ -29,10 +29,12 @@ else
         </thead>
 
         <tbody>
+            @{ DateTime? lastDate = null; }
             @foreach(var r in Model)
             {
+                var showDate = !lastDate.HasValue || lastDate.Value != r.Date;
                 <tr class="summary-row" data-date="@r.Date.ToString("yyyy-MM-dd")" data-instrument="@r.Instrument" style="cursor:pointer;">
-                    <td>@r.Date.ToString("yyyy-MM-dd")</td>
+                    <td>@(showDate ? r.Date.ToString("yyyy-MM-dd") : string.Empty)</td>
                     <td>@r.Instrument</td>
                     <td>@(r.BuyQty == 0 ? string.Empty : r.BuyQty.ToString())</td>
                     <td>@(r.BuyAverage == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0}", r.BuyAverage))</td>
@@ -41,6 +43,7 @@ else
                     <td>@(r.SellAverage == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0}", r.SellAverage))</td>
                     <td>@(r.SellTotal == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0}", r.SellTotal))</td>
                 </tr>
+                lastDate = r.Date;
             }
         </tbody>
         </table>

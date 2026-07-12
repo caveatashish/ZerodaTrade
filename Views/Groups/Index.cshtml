@@ -7,8 +7,8 @@
         <ul class="list-group">
             @foreach (var group in Model)
             {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    @group.Name
+                <li class="list-group-item d-flex justify-content-between align-items-center clickable-group" data-group-id="@group.Id">
+                    <span class="group-name">@group.Name</span>
                     <div>
                         <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#groupModal"
                                 data-url="@Url.Action("Edit", "Groups", new { id = group.Id })">
@@ -28,8 +28,24 @@
         </button>
     </div>
 
-    <!-- Right side: Modal -->
+    <!-- Right side: Scripts list -->
     <div class="col-md-8">
+        <h4>Scripts</h4>
+        <table class="table table-sm table-bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Group</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="scriptsBody">
+                <tr><td colspan="4">Select a group to view scripts</td></tr>
+            </tbody>
+        </table>
+
+        <!-- Modal -->
         <div class="modal fade" id="groupModal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -53,6 +69,57 @@
                 // Re-parse validation for dynamically loaded content
              //   $.validator.unobtrusive.parse(modal.find('form'));
             });
+
+        // Open script edit modal (used by injected script table buttons)
+        window.openEditModal = function (id) {
+            if (!id) return;
+            // call controller edit endpoint; use no space in querystring
+            $.get('/Script/Edit?id=' + id, function (html) {
+                var modal = $('#groupModal');
+                modal.find('.modal-content').html(html);
+                var bsModal = bootstrap.Modal.getInstance(modal[0]);
+                if (!bsModal) bsModal = new bootstrap.Modal(modal[0]);
+                bsModal.show();
+            });
+        };
+
+        // Submit script edit (called by edit partial Save button)
+        window.submitEditForm = function () {
+            var script = {
+                Id: $('#editId').val(),
+                Name: $('#editName').val(),
+                Status: $('#editStatus').is(':checked'),
+                GroupId: $('#editGroupId').val()
+            };
+
+            $.ajax({
+                url: '/Script/Edit',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(script),
+                success: function (res) {
+                    if (res.success) {
+                        // refresh scripts for selected group
+                        var sel = $('.clickable-group.active');
+                        var groupId = sel.data('group-id');
+                        if (groupId) {
+                            $.get('@Url.Action("ScriptsByGroup", "Script")', { groupId: groupId }, function (html) {
+                                $('#scriptsBody').html(html);
+                            });
+                        }
+                        // hide modal
+                        var modalEl = document.getElementById('groupModal');
+                        var bsModal = bootstrap.Modal.getInstance(modalEl);
+                        if (bsModal) bsModal.hide();
+                    } else {
+                        alert(res.message || 'Validation failed');
+                    }
+                },
+                error: function () {
+                    alert('Error saving script');
+                }
+            });
+        };
         });
 
         // Handle AJAX form submission
@@ -82,6 +149,23 @@
                 error: function () {
                     alert("Something went wrong. Please try again.");
                 }
+            });
+        });
+
+        // Load scripts when a group row is clicked
+        $(document).on('click', '.clickable-group', function (e) {
+            // prevent clicks on modal buttons from triggering this
+            if ($(e.target).closest('button').length) return;
+            var li = $(this);
+            var groupId = li.data('group-id');
+            if (!groupId) return;
+
+            // highlight selected
+            $('.clickable-group').removeClass('active');
+            li.addClass('active');
+
+            $.get('@Url.Action("ScriptsByGroup", "Script")', { groupId: groupId }, function (html) {
+                $('#scriptsBody').html(html);
             });
         });
     </script>

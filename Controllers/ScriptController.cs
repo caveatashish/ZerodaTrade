@@ -32,6 +32,14 @@ namespace ZerodaTrade.Controllers
             return PartialView("_ScriptTable", scripts);
         }
 
+        // Return scripts for a specific group as partial table rows
+        [HttpGet]
+        public async Task<IActionResult> ScriptsByGroup(int groupId)
+        {
+            var scripts = await _context.Scripts.Where(s => s.GroupId == groupId).Include(s => s.Group).ToListAsync();
+            return PartialView("_ScriptTable", scripts);
+        }
+
         // Return edit form as partial (loaded into modal)
         [HttpGet]
         public async Task<IActionResult> Edit(int id)

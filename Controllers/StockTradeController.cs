@@ -65,6 +65,79 @@ namespace ZerodaTrade.Controllers
             return PartialView("_TradeTable", summary);
         }
 
+        // return recent trades summary for a specific group (across all instruments in the group)
+        [HttpGet]
+        public async Task<IActionResult> GetRecentTradesByGroup(int groupId, int days = 10)
+        {
+            if (days <= 0) days = 5;
+            var since = DateTime.UtcNow.Date.AddDays(-days + 1);
+
+            // get instruments belonging to the group
+            var instruments = await _context.Scripts.Where(s => s.GroupId == groupId).Select(s => s.Name).ToListAsync();
+
+            var trades = await _context.Trades
+                .Where(t => instruments.Contains(t.Instrument) && t.FillTime >= since)
+                .ToListAsync();
+
+            var summary = trades
+                .GroupBy(t => new { Date = t.FillTime.Date, t.Instrument })
+                .Select(g => new StockTradeSummary
+                {
+                    Date = g.Key.Date,
+                    Instrument = g.Key.Instrument,
+                    BuyQty = g.Where(x => x.Type.Equals("buy", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Qty),
+                    BuyTotal = g.Where(x => x.Type.Equals("buy", StringComparison.OrdinalIgnoreCase)).Sum(x => x.AvgPrice * x.Qty),
+                    SellQty = g.Where(x => x.Type.Equals("sell", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Qty),
+                    SellTotal = g.Where(x => x.Type.Equals("sell", StringComparison.OrdinalIgnoreCase)).Sum(x => x.AvgPrice * x.Qty),
+                })
+                .OrderByDescending(r => r.Date)
+                .ThenBy(r => r.Instrument)
+                .ToList();
+
+            foreach (var row in summary)
+            {
+                row.BuyAverage = row.BuyQty != 0 ? row.BuyTotal / row.BuyQty : 0;
+                row.SellAverage = row.SellQty != 0 ? row.SellTotal / row.SellQty : 0;
+            }
+
+            return PartialView("_TradeTable", summary);
+        }
+
+        // return recent trades summary across all instruments for the last N days
+        [HttpGet]
+        public async Task<IActionResult> GetRecentTrades(int days = 10)
+        {
+            if (days <= 0) days = 5;
+            var since = DateTime.UtcNow.Date.AddDays(-days + 1);
+
+            var trades = await _context.Trades
+                .Where(t => t.FillTime >= since)
+                .ToListAsync();
+
+            var summary = trades
+                .GroupBy(t => new { Date = t.FillTime.Date, t.Instrument })
+                .Select(g => new StockTradeSummary
+                {
+                    Date = g.Key.Date,
+                    Instrument = g.Key.Instrument,
+                    BuyQty = g.Where(x => x.Type.Equals("buy", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Qty),
+                    BuyTotal = g.Where(x => x.Type.Equals("buy", StringComparison.OrdinalIgnoreCase)).Sum(x => x.AvgPrice * x.Qty),
+                    SellQty = g.Where(x => x.Type.Equals("sell", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Qty),
+                    SellTotal = g.Where(x => x.Type.Equals("sell", StringComparison.OrdinalIgnoreCase)).Sum(x => x.AvgPrice * x.Qty),
+                })
+                .OrderByDescending(r => r.Date)
+                .ThenBy(r => r.Instrument)
+                .ToList();
+
+            foreach (var row in summary)
+            {
+                row.BuyAverage = row.BuyQty != 0 ? row.BuyTotal / row.BuyQty : 0;
+                row.SellAverage = row.SellQty != 0 ? row.SellTotal / row.SellQty : 0;
+            }
+
+            return PartialView("_TradeTable", summary);
+        }
+
         // return detailed trades for a given instrument and date (date format yyyy-MM-dd)
         [HttpGet]
         public async Task<IActionResult> GetDayTrades(string instrument, string date)

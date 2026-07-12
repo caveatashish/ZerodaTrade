@@ -49,14 +49,22 @@
 
             var checked = $('.group-checkbox:checked');
             if(checked.length === 0){
+                // no group selected: clear stock list and show recent trades for last 5 days
                 $('#stockList').html('');
-                $('#tradeTable').html('');
+                $('#SpecififDayTrade').html('');
+                $.get('/StockTrade/GetRecentTrades?days=5', function(html){
+                    $('#tradeTable').html(html);
+                });
                 return;
             }
             var groupId = checked.val();
             $.get('/StockTrade/GetStocks?groupId=' + groupId, function(html){
                 $('#stockList').html(html);
-                $('#tradeTable').html('');
+                $('#SpecififDayTrade').html('');
+            });
+            // also show recent trades for the selected group when no stock selected
+            $.get('/StockTrade/GetRecentTradesByGroup?groupId=' + groupId + '&days=5', function(html){
+                $('#tradeTable').html(html);
             });
         });
 
@@ -80,5 +88,12 @@
                 $('#SpecififDayTrade').html(html);
             });
         });
+
+        // on initial load, if no group selected, show recent trades (last 5 days)
+        if ($('.group-checkbox:checked').length === 0) {
+            $.get('/StockTrade/GetRecentTrades?days=5', function(html) {
+                $('#tradeTable').html(html);
+            });
+        }
     });
 </script>
