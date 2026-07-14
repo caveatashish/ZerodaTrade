@@ -1,11 +1,13 @@
 @model IEnumerable<ZerodaTrade.Models.Script>
 
 <div style="width:100%; max-height:60vh; overflow-y:auto;">
-<ul class="list-group">
+<div class="row">
 @foreach(var s in Model){
-    <li class="list-group-item">
-        <a href="#" class="stock-link" data-instrument="@s.Name">@s.Name</a>
-    </li>
+    <div class="col-6 mb-2">
+        <div class="d-flex align-items-center">
+            <a href="#" title="@s.Name" class="stock-link flex-grow-1 text-decoration-none" data-instrument="@s.Name">@s.Name</a>
+        </div>
+    </div>
 }
-</ul>
+</div>
 </div>

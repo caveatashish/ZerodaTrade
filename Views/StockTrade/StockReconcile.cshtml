@@ -1,0 +1,82 @@
+@model IEnumerable<ZerodaTrade.Models.Trade>
+@{
+    ViewData["Title"] = "Stock Reconcile";
+}
+
+<h2>Stock Reconcile</h2>
+
+@if (Model == null || !Model.Any())
+{
+    <div>No trades found.</div>
+}
+else
+{
+    var instrument = Model.First().Instrument;
+    <div class="mb-2">
+        <strong>Instrument: </strong> @instrument
+    </div>
+
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th>Fill Time</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Avg Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var t in Model)
+            {
+                var cls = t.Type?.ToLowerInvariant() == "buy" ? "text-success" : (t.Type?.ToLowerInvariant() == "sell" ? "text-danger" : "");
+                <tr id="trade-row-@t.Id">
+                    <td>@t.FillTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td class="@cls">@t.Type</td>
+                    <td class="@cls">@t.Qty</td>
+                    <td class="@cls">@String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N2}", t.AvgPrice)</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="openEditTrade(@t.Id)">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteTrade(@t.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Edit modal -->
+    <div class="modal fade" id="tradeEditModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" id="tradeEditModalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        function openEditTrade(id){
+            if(!id) return;
+            $.get('/Script/EditTrade?id=' + id, function(html){
+                $('#tradeEditModalContent').html(html);
+                var m = new bootstrap.Modal(document.getElementById('tradeEditModal'));
+                m.show();
+            });
+        }
+
+        function deleteTrade(id){
+            if(!confirm('Delete this trade?')) return;
+            $.ajax({
+                url: '/Script/DeleteTrade',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(id),
+                success: function(res){
+                    if(res.success){
+                        $('#trade-row-' + id).remove();
+                    } else {
+                        alert(res.message || 'Delete failed');
+                    }
+                },
+                error: function(){ alert('Error deleting trade'); }
+            });
+        }
+    </script>
+}

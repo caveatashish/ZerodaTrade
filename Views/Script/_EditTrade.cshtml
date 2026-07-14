@@ -1,0 +1,46 @@
+@model ZerodaTrade.Models.Trade
+
+<div>
+    <input type="hidden" id="tradeId" value="@Model.Id" />
+    <input type="hidden" id="tradeInstrument" value="@Model.Instrument" />
+    <input type="hidden" id="tradeDate" value="@Model.FillTime.ToString("yyyy-MM-dd")" />
+    <div class="mb-2">
+        <label>Fill Time</label>
+        <div>@Model.FillTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+    </div>
+    <div class="mb-2">
+        <label>Type</label>
+        <select id="tradeType" class="form-select">
+            @if (Model.Type?.ToLowerInvariant() == "buy")
+            {
+                <option value="buy" selected>Buy</option>
+                <option value="sell">Sell</option>
+            }
+            else if (Model.Type?.ToLowerInvariant() == "sell")
+            {
+                <option value="buy">Buy</option>
+                <option value="sell" selected>Sell</option>
+            }
+            else
+            {
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+            }
+        </select>
+    </div>
+    <div class="mb-2">
+        <label>Qty</label>
+        <input id="tradeQty" class="form-control" value="@Model.Qty" />
+    </div>
+    <div class="mb-2">
+        <label>Avg Price</label>
+        <input id="tradeAvgPrice" class="form-control" value="@Model.AvgPrice" />
+    </div>
+    <div class="mb-2 form-check">
+        <input type="checkbox" id="tradeCNC" class="form-check-input" @(Model.CNC == true ? "checked" : "") />
+        <label class="form-check-label" for="tradeCNC">CNC</label>
+    </div>
+    <div class="mt-2">
+        <button type="button" class="btn btn-primary" onclick="submitTradeEdit()">Save</button>
+    </div>
+</div>

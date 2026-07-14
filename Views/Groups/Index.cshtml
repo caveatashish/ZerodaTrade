@@ -54,6 +54,20 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Edit Modal (content loaded via AJAX) -->
+    <div class="modal fade" id="editModalScript" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" id="editModalContent">
+                <!-- partial loaded here -->
+            </div>
+        </div>
+    </div>
+
+
+
+
 </div>
 
 @section Scripts {
@@ -168,5 +182,42 @@
                 $('#scriptsBody').html(html);
             });
         });
+
+
+
+            function openEditModal(id, name, status, groupId) {
+            // load partial edit form into modal
+            $.get('/Script/Edit/' + id, function (html) {
+                $('#editModalContent').html(html);
+                $('#editModalScript').modal('show');
+            });
+        }
+        function submitEditForm() {
+            var script = {
+                Id: $('#editId').val(),
+                Name: $('#editName').val(),
+                Status: $('#editStatus').is(':checked'),
+                GroupId: $('#editGroupId').val()
+            };
+
+            $.ajax({
+                url: '/Script/Edit',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(script),
+                success: function (res) {
+                    if (res.success) {
+                        // fetch updated single row HTML and replace existing row
+                        $.get('/Script/Row/' + script.Id, function (rowHtml) {
+                            $('#row-' + script.Id).replaceWith(rowHtml);
+                            $('#editModalScript').modal('hide');
+                        });
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+
     </script>
 }

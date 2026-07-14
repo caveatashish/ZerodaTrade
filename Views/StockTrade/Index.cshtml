@@ -13,6 +13,19 @@
                 <input class="form-check-input group-checkbox" type="checkbox" value="@g.Id" id="group-@g.Id" />
                 <label class="form-check-label" for="group-@g.Id">@g.Name</label>
             </div>
+
+<style>
+    /* Prevent long stock names from causing horizontal scroll; truncate with ellipsis */
+    .stock-link {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ensure the two-column stock item doesn't force width */
+    #stockList .col-6 { min-width: 0; }
+</style>
         }
     </div>
 </div>
@@ -20,12 +33,20 @@
 <div class="row">
     <div class="col-md-2">
         <h5>Stocks</h5>
-        <div id="stockList">
+        <div id="stockList" class="border rounded p-2" style="overflow-x:hidden;">
             <!-- loaded via AJAX -->
         </div>
     </div>
     <div class="col-md-7">
-        <h5>Trades</h5>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h5>Trades</h5>
+
+            <h6>
+                <a href="/reconciliation" style="text-decoration:none; color:inherit;">
+                    Stock Reconciliation
+                </a>
+            </h6>
+        </div>
         <div id="tradeTable">
             <!-- loaded via AJAX -->
         </div>

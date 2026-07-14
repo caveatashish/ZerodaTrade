@@ -3,8 +3,13 @@
     var groups = ViewBag.Groups as List<Group>;
 }
 
-<h2>Scripts</h2>
-<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">Add Script</button>
+<div class="d-flex align-items-center mb-3">
+    <h2 class="me-3">Scripts</h2>
+    <div class="me-3" style="min-width:300px; max-width:50%">
+        <input id="scriptSearch" class="form-control" placeholder="Search scripts by name..." />
+    </div>
+    <button class="btn btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#createModal">Add Script</button>
+</div>
 
 <table class="table table-striped" id="scriptTable">
     <thead>
@@ -72,6 +77,15 @@
     <div class="modal-dialog">
         <div class="modal-content" id="editModalContent">
             <!-- partial loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Trade Modal -->
+<div class="modal fade" id="tradeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="tradeModalContent">
+            <!-- loaded via AJAX: summary + detail placeholder -->
         </div>
     </div>
 </div>
@@ -177,5 +191,83 @@
         });
     }
 
+    // search debounce
+    (function(){
+        var _searchTimer = null;
+        $(document).ready(function(){
+            $('#scriptSearch').on('input', function(){
+                var q = $(this).val();
+                clearTimeout(_searchTimer);
+                _searchTimer = setTimeout(function(){
+                    $.get('/Script/List', { q: q }, function(html){
+                        $('#scriptTable tbody').html(html);
+                    });
+                }, 300);
+            });
+        });
+    })();
+
+    // open trades for a script in modal
+    window.openScriptTrades = function(instrument) {
+        if (!instrument) return;
+        $.get('/Script/Trades', { instrument: instrument }, function(html) {
+            // load summary and a placeholder for day details into modal
+            var content = '<div class="p-3">' + html + '<div id="tradeDayDetail" class="mt-3"></div></div>';
+            $('#tradeModalContent').html(content);
+            var m = new bootstrap.Modal(document.getElementById('tradeModal'));
+            m.show();
+        });
+    };
+
+    // delegated handler inside modal: when clicking summary row load day trades
+    $(document).on('click', '#tradeModal .summary-row', function(){
+        var instrument = $(this).data('instrument');
+        var date = $(this).data('date');
+        if (!instrument || !date) return;
+        $.get('/Script/GetDayTrades', { instrument: instrument, date: date }, function(html){
+            $('#tradeDayDetail').html(html);
+        });
+    });
+
+    // open edit trade modal
+    window.openEditTrade = function(id) {
+        if (!id) return;
+        $.get('/Script/EditTrade?id=' + id, function(html) {
+            // show in the same trade modal as a nested modal content
+            var $modal = $('#tradeModalContent');
+            $modal.find('#tradeDayDetail').html(html);
+        });
+    };
+
+    // submit trade edit
+    window.submitTradeEdit = function() {
+        var trade = {
+            Id: $('#tradeId').val(),
+            Type: $('#tradeType').val(),
+            Qty: parseInt($('#tradeQty').val() || '0'),
+            AvgPrice: parseFloat($('#tradeAvgPrice').val() || '0'),
+            CNC: $('#tradeCNC').is(':checked')
+        };
+        $.ajax({
+            url: '/Script/EditTrade',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(trade),
+            success: function(res) {
+                if (res.success) {
+                    // refresh day trades if instrument/date present
+                    var instrument = $('#tradeInstrument').val();
+                    var date = $('#tradeDate').val();
+                    if (instrument && date) {
+                        $.get('/Script/GetDayTrades', { instrument: instrument, date: date }, function(html){
+                            $('#tradeDayDetail').html(html);
+                        });
+                    }
+                } else {
+                    alert(res.message || 'Failed to save trade');
+                }
+            }
+        });
+    };
 
             </script>
