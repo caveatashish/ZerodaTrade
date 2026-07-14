@@ -9,6 +9,9 @@ builder.Services.AddControllersWithViews();
 // Enable Razor Pages
 builder.Services.AddRazorPages();
 
+// Add in-memory caching for script stats
+builder.Services.AddMemoryCache();
+
 // Add Entity Framework Core
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

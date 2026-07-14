@@ -19,6 +19,17 @@ namespace ZerodaTrade.Models
 
         public ICollection<Script> Scripts { get; set; } = new List<Script>();
     }
+
+    // DTO for script statistics (backed by a DB view)
+    public class ScriptStat
+    {
+        public string ScriptName { get; set; } = string.Empty;
+        public decimal AvgBuyPrice { get; set; }
+        public decimal AvgSellPrice { get; set; }
+        public int TotalBuyQty { get; set; }
+        public int TotalSellQty { get; set; }
+        public int RowCount { get; set; }
+    }
     public class Script
     {
         [Key]

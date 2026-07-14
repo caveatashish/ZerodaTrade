@@ -1,0 +1,28 @@
+@model ZerodaTrade.Models.ScriptStat
+
+<div class="table-responsive">
+    <table class="table table-sm mb-0">
+        <tbody>
+            <tr>
+                <td><strong>Avg Buy</strong></td>
+                <td class="text-end">@Model.AvgBuyPrice.ToString("N2")</td>
+            </tr>
+            <tr>
+                <td><strong>Avg Sell</strong></td>
+                <td class="text-end">@Model.AvgSellPrice.ToString("N2")</td>
+            </tr>
+            <tr>
+                <td><strong>Total Buy Qty</strong></td>
+                <td class="text-end">@Model.TotalBuyQty</td>
+            </tr>
+            <tr>
+                <td><strong>Total Sell Qty</strong></td>
+                <td class="text-end">@Model.TotalSellQty</td>
+            </tr>
+            <tr>
+                <td><strong>Row Count</strong></td>
+                <td class="text-end">@Model.RowCount</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

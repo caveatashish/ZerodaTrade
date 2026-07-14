@@ -51,12 +51,24 @@
             <!-- loaded via AJAX -->
         </div>
     </div>
-    <div class="col-md-3">
-        <h5>Day Trade</h5>
-        <div id="SpecififDayTrade">
-            <!-- detailed trades for selected day will load here -->
+    <div class="col-md-3 d-flex flex-column" style="height:100%;">
+        <!-- Upper block: Stock Stats -->
+        <div class="mb-3 flex-grow-1 border rounded p-2">
+            <h5>Stock Stats</h5>
+            <div id="stockStats">
+                <!-- summary stats will load here -->
+            </div>
+        </div>
+
+        <!-- Lower block: Day Trade -->
+        <div class="flex-grow-1 border rounded p-2">
+            <h5>Day Trade</h5>
+            <div id="SpecififDayTrade">
+                <!-- detailed trades for selected day will load here -->
+            </div>
         </div>
     </div>
+
 </div>
 
 
@@ -97,6 +109,12 @@
                 $('#tradeTable').html(html);
                 // clear specific day details when new summary loads
                 $('#SpecififDayTrade').html('');
+                // load stats for selected stock into the stockStats div
+                $.get('/ScriptStats/GetByInstrument?instrument=' + encodeURIComponent(instrument), function(partialHtml){
+                    $('#stockStats').html(partialHtml);
+                }).fail(function(){
+                    $('#stockStats').html('<div class="text-muted">No stats available</div>');
+                });
             });
         });
 
