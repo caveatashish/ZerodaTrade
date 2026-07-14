@@ -1,28 +1,46 @@
 @model ZerodaTrade.Models.ScriptStat
+@using ZerodaTrade.Models
+@{
+    var stat = (ScriptStat)ViewData.Model!;
+    var perShare = stat.AvgSellPrice - stat.AvgBuyPrice;
+    var totalProfit = perShare * stat.TotalSellQty;
+    string plClass = perShare > 0 ? "text-success" : (perShare < 0 ? "text-danger" : "text-muted");
+    string totalPlClass = totalProfit > 0 ? "text-success" : (totalProfit < 0 ? "text-danger" : "text-muted");
+}
 
-<div class="table-responsive">
-    <table class="table table-sm mb-0">
-        <tbody>
-            <tr>
-                <td><strong>Avg Buy</strong></td>
-                <td class="text-end">@Model.AvgBuyPrice.ToString("N2")</td>
-            </tr>
-            <tr>
-                <td><strong>Avg Sell</strong></td>
-                <td class="text-end">@Model.AvgSellPrice.ToString("N2")</td>
-            </tr>
-            <tr>
-                <td><strong>Total Buy Qty</strong></td>
-                <td class="text-end">@Model.TotalBuyQty</td>
-            </tr>
-            <tr>
-                <td><strong>Total Sell Qty</strong></td>
-                <td class="text-end">@Model.TotalSellQty</td>
-            </tr>
-            <tr>
-                <td><strong>Row Count</strong></td>
-                <td class="text-end">@Model.RowCount</td>
-            </tr>
-        </tbody>
-    </table>
+<div class="card">
+    <div class="card-body p-2">
+        <h6 class="card-title mb-2">@stat.ScriptName</h6>
+        <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+                <div class="row gx-1 gy-1">
+                    <div class="col-6">
+                        <div class="small text-muted">Avg Buy</div>
+                        <div class="fw-bold">@stat.AvgBuyPrice.ToString("N0")</div>
+                    </div>
+                    <div class="col-6 text-end">
+                        <div class="small text-muted">Avg Sell</div>
+                        <div class="fw-bold">@stat.AvgSellPrice.ToString("N0")</div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="small text-muted">Buy Qty</div>
+                        <div>@stat.TotalBuyQty</div>
+                    </div>
+                    <div class="col-6 text-end">
+                        <div class="small text-muted">Sell Qty</div>
+                        <div>@stat.TotalSellQty</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ms-3 text-end" style="min-width:130px;">
+                <div class="small text-muted">P/L per share</div>
+                <div class="fw-bold @plClass">@perShare.ToString("N2")</div>
+                <div class="small text-muted mt-2">Total P/L</div>
+                <div class="fw-bold @totalPlClass">@totalProfit.ToString("N2")</div>
+            </div>
+        </div>
+       
+    </div>
 </div>
