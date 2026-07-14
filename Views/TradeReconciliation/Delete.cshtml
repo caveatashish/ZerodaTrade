@@ -1,0 +1,48 @@
+@model ZerodaTrade.Models.Trade
+
+@{
+    ViewData["Title"] = "Delete Trade";
+}
+
+<div class="container mt-3">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">@ViewData["Title"]</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        Are you sure you want to delete this trade?
+                    </div>
+
+                    <dl class="row">
+                        <dt class="col-sm-3">Id</dt>
+                        <dd class="col-sm-9">@Model.Id</dd>
+
+                        <dt class="col-sm-3">TradeId</dt>
+                        <dd class="col-sm-9">@Model.TradeId</dd>
+
+                        <dt class="col-sm-3">Instrument</dt>
+                        <dd class="col-sm-9">@Model.Instrument</dd>
+
+                        <dt class="col-sm-3">Fill Time</dt>
+                        <dd class="col-sm-9">@Model.FillTime.ToString("yyyy-MM-dd HH:mm")</dd>
+
+                        <dt class="col-sm-3">Qty</dt>
+                        <dd class="col-sm-9">@Model.Qty</dd>
+
+                        <dt class="col-sm-3">Avg Price</dt>
+                        <dd class="col-sm-9">@Model.AvgPrice.ToString("F2")</dd>
+                    </dl>
+
+                    <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

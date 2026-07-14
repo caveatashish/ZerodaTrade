@@ -1,0 +1,84 @@
+@model ZerodaTrade.Models.TradeListViewModel
+
+@{
+    ViewData["Title"] = "Trade Reconciliation";
+}
+
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>@ViewData["Title"]</h2>
+        <form method="get" class="d-flex gap-2">
+            <select name="instrument" class="form-select">
+                <option value="">-- All Instruments --</option>
+                @foreach (var inst in Model.Instruments)
+                {
+                    <option value="@inst" selected="@(Model.SelectedInstrument == inst ? "selected" : null)">@inst</option>
+                }
+            </select>
+            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Id</th>
+                    <th>Trade ID</th>
+                    <th>Fill Time</th>
+                    <th>Type</th>
+                    <th>Instrument</th>
+                    <th>CNC</th>
+                    <th>Qty</th>
+                    <th>Avg Price</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model.Trades)
+                {
+                    var routeId = t.Id != 0 ? t.Id.ToString() : t.TradeId.ToString();
+                    <tr>
+                        <td>@t.Id</td>
+                        <td>@t.TradeId</td>
+                        <td>@t.FillTime.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@t.Type</td>
+                        <td>@t.Instrument</td>
+                        <td>@(t.CNC.HasValue && t.CNC.Value ? "Yes" : "No")</td>
+                        <td>@t.Qty</td>
+                        <td>@t.AvgPrice.ToString("F2")</td>
+                        <td>
+                            <a asp-controller="TradeReconciliation" asp-action="Edit" asp-route-id="@routeId" class="btn btn-sm btn-warning">Edit</a>
+                            <a asp-controller="TradeReconciliation" asp-action="Delete" asp-route-id="@routeId" class="btn btn-sm btn-danger ms-1">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            Showing page @Model.Page of @Model.TotalPages (Total: @Model.TotalItems)
+        </div>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-controller="TradeReconciliation" asp-route-instrument="@Model.SelectedInstrument" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize">Previous</a>
+                </li>
+
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-controller="TradeReconciliation" asp-route-instrument="@Model.SelectedInstrument" asp-route-page="@i" asp-route-pageSize="@Model.PageSize">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-controller="TradeReconciliation" asp-route-instrument="@Model.SelectedInstrument" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>

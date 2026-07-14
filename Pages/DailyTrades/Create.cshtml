@@ -45,8 +45,9 @@
                         </div>
 
                         <div class="form-check mb-3">
-                            <input asp-for="DailyTrade.CNC" class="form-check-input" type="checkbox" />
-                            <label asp-for="DailyTrade.CNC" class="form-check-label">CNC</label>
+                            <input type="hidden" name="DailyTrade.CNC" value="false" />
+                            <input class="form-check-input" type="checkbox" id="DailyTrade_CNC" name="DailyTrade.CNC" value="true" @(Model.DailyTrade.CNC == true ? "checked" : null) />
+                            <label class="form-check-label" for="DailyTrade_CNC">CNC</label>
                             <span asp-validation-for="DailyTrade.CNC" class="text-danger"></span>
                         </div>
 
