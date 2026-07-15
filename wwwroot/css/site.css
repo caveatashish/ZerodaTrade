@@ -29,3 +29,72 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+.stylish-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* Prevents resizing */
+}
+
+    .stylish-table th,
+    .stylish-table td {
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    /* Sticky header */
+    .stylish-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: #343a40;
+        color: #fff;
+        font-weight: bold;
+    }
+
+    /* BUY and SELL headers */
+    .stylish-table .buy {
+        background-color: #28a745;
+        color: #fff;
+    }
+
+    .stylish-table .sell {
+        background-color: #dc3545;
+        color: #fff;
+    }
+
+    .stylish-table .sub-header {
+        background-color: #f8f9fa;
+    }
+
+    /* Prevent trimming for Qty, Average, Total */
+    .stylish-table .no-trim {
+        white-space: nowrap; /* Always on one line */
+    }
+
+    /* Allow wrapping for Instrument column so no horizontal scroll */
+    .stylish-table .wrap {
+        white-space: normal; /* Wrap text */
+        word-wrap: break-word; /* Break long words */
+    }
+
+
+.section-buy {
+    background: linear-gradient(90deg, #e8f5e9 0%, #ffffff 100%);
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.section-sell {
+    background: linear-gradient(90deg, #ffebee 0%, #ffffff 100%);
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.section-pl {
+    background: linear-gradient(90deg, #f1f3f4 0%, #ffffff 100%);
+    border-radius: 4px;
+    padding: 8px;
+}

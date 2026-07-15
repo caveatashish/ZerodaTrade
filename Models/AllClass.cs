@@ -29,6 +29,9 @@ namespace ZerodaTrade.Models
         public int TotalBuyQty { get; set; }
         public int TotalSellQty { get; set; }
         public int RowCount { get; set; }
+        public decimal MinBuyPrice { get; set; }
+        public decimal MaxSellPrice { get; set; }
+
     }
     public class Script
     {

@@ -79,7 +79,7 @@ namespace ZerodaTrade.Controllers
             var viewName = "ScriptWeightedAvgPrices";
             var result = new List<ScriptStat>();
 
-            var sql = $"SELECT ScriptName, AvgBuyPrice, AvgSellPrice, TotalBuyQty, TotalSellQty, RowCount1 FROM [{viewName}]";
+            var sql = $"SELECT ScriptName, AvgBuyPrice, AvgSellPrice, TotalBuyQty, TotalSellQty, RowCount1, MinBuyPrice,MaxSellPrice FROM [{viewName}]";
 
             var conn = _context.Database.GetDbConnection();
             try
@@ -98,6 +98,8 @@ namespace ZerodaTrade.Controllers
                         AvgSellPrice = reader.IsDBNull(reader.GetOrdinal("AvgSellPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("AvgSellPrice")),
                         TotalBuyQty = reader.IsDBNull(reader.GetOrdinal("TotalBuyQty")) ? 0 : reader.GetInt32(reader.GetOrdinal("TotalBuyQty")),
                         TotalSellQty = reader.IsDBNull(reader.GetOrdinal("TotalSellQty")) ? 0 : reader.GetInt32(reader.GetOrdinal("TotalSellQty")),
+                        MinBuyPrice = reader.IsDBNull(reader.GetOrdinal("MinBuyPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("MinBuyPrice")),
+                        MaxSellPrice = reader.IsDBNull(reader.GetOrdinal("MaxSellPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("MaxSellPrice")),
                         RowCount = 1
                     };
                     result.Add(stat);

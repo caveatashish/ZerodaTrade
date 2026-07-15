@@ -167,7 +167,7 @@ namespace ZerodaTrade.Controllers
             var trades = await _context.Trades
                           .Where(t => t.Instrument == instrument && t.FillTime.Date <= theDate.Date)
                           .OrderByDescending(t => t.FillTime)   // latest first
-                          .Take(15)                             // only last 15 records
+                          .Take(5)                             // only last 15 records
                           .ToListAsync();
 
 
