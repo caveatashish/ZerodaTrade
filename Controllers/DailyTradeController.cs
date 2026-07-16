@@ -105,9 +105,74 @@ namespace ZerodaTrade.Controllers
 
             if (trades.Count > 0)
             {
-                await _context.DailyTrades.AddRangeAsync(trades);
+                // Aggregate trades before inserting:
+                // - group by FillTime.Date, Type (case-insensitive), Instrument
+                // - within each group cluster AvgPrice values within a tolerance (±1)
+                // - for each cluster sum Qty and compute weighted AvgPrice
+                const decimal tolerance = 1m;
+
+                var aggregated = new List<DailyTrade>();
+
+                var groups = trades
+                    .GroupBy(t => new { Date = t.FillTime.Date, Type = (t.Type ?? string.Empty).ToLowerInvariant(), t.Instrument });
+
+                long newTradeIdBase = DateTime.UtcNow.Ticks;
+                long newTradeIdCounter = 0;
+
+                foreach (var g in groups)
+                {
+                    // cluster by AvgPrice within tolerance
+                    var buckets = new List<List<DailyTrade>>();
+                    foreach (var t in g.OrderBy(x => x.AvgPrice))
+                    {
+                        if (!buckets.Any())
+                        {
+                            buckets.Add(new List<DailyTrade> { t });
+                            continue;
+                        }
+
+                        var last = buckets.Last();
+                        var lastQty = last.Sum(x => x.Qty);
+                        var lastWeighted = lastQty == 0 ? last.Average(x => x.AvgPrice) : last.Sum(x => x.AvgPrice * x.Qty) / lastQty;
+
+                        if (Math.Abs(t.AvgPrice - lastWeighted) <= tolerance)
+                        {
+                            last.Add(t);
+                        }
+                        else
+                        {
+                            buckets.Add(new List<DailyTrade> { t });
+                        }
+                    }
+
+                    // create aggregated records for each bucket
+                    foreach (var bucket in buckets)
+                    {
+                        var sumQty = bucket.Sum(x => x.Qty);
+                        var weightedAvg = sumQty == 0 ? bucket.Average(x => x.AvgPrice) : bucket.Sum(x => x.AvgPrice * x.Qty) / sumQty;
+
+                        var agg = new DailyTrade
+                        {
+                            // generate a new unique TradeId to avoid collisions
+                            TradeId = newTradeIdBase + (++newTradeIdCounter),
+                            FillTime = bucket.Min(x => x.FillTime),
+                            Type = bucket.First().Type,
+                            Instrument = g.Key.Instrument,
+                            CNC = bucket.First().CNC,
+                            Qty = sumQty,
+                            AvgPrice = Math.Round(weightedAvg, 2),
+                            CreatedDate = DateTime.UtcNow,
+                            ModifiedDate = DateTime.UtcNow
+                        };
+
+                        aggregated.Add(agg);
+                    }
+                }
+
+                // save aggregated rows
+                await _context.DailyTrades.AddRangeAsync(aggregated);
                 await _context.SaveChangesAsync();
-                ViewBag.Success = $"Imported {trades.Count} rows.";
+                ViewBag.Success = $"Imported {trades.Count} rows; inserted {aggregated.Count} aggregated rows.";
             }
             else
             {
@@ -135,10 +200,6 @@ namespace ZerodaTrade.Controllers
             {
                 // Execute stored procedure to transfer rows to Trades
                 await _context.Database.ExecuteSqlRawAsync("EXEC TransferDailyToTrades");
-
-                // Truncate the DailyTrades table
-                await _context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE DailyTrades");
-
                 TempData["Success"] = "Transferred rows to Trades and truncated DailyTrades.";
             }
             catch (Exception ex)
@@ -184,6 +245,33 @@ namespace ZerodaTrade.Controllers
             }
             parts.Add(current.ToString());
             return parts.Select(p => p.Trim()).ToArray();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TruncateDailyTrade()
+        {
+            // check if there are rows to transfer
+            var hasRows = await _context.DailyTrades.AnyAsync();
+            if (!hasRows)
+            {
+                TempData["Error"] = "No rows in DailyTrades to delete.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                // Execute stored procedure to transfer rows to Trades
+                await _context.Database.ExecuteSqlRawAsync("EXEC TruncateDailyTrade");
+                TempData["Success"] = "Daily Trades table truncated successfully.";
+            }
+            catch (Exception ex)
+            {
+                // log or return error
+                TempData["Error"] = "Error during deletion: " + ex.Message;
+            }
+
+            return RedirectToAction("Index");
         }
     }
 }

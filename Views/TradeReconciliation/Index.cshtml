@@ -68,11 +68,67 @@
                     <a class="page-link" asp-action="Index" asp-controller="TradeReconciliation" asp-route-instrument="@Model.SelectedInstrument" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize">Previous</a>
                 </li>
 
-                @for (int i = 1; i <= Model.TotalPages; i++)
-                {
-                    <li class="page-item @(i == Model.Page ? "active" : "")">
-                        <a class="page-link" asp-action="Index" asp-controller="TradeReconciliation" asp-route-instrument="@Model.SelectedInstrument" asp-route-page="@i" asp-route-pageSize="@Model.PageSize">@i</a>
-                    </li>
+                @{
+                    // Trim pagination when there are many pages.
+                    var total = Model.TotalPages;
+                    var current = Model.Page;
+                    const int maxPagesToShow = 7; // including first and last
+                    var pages = new List<int?>();
+
+                    if (total <= maxPagesToShow)
+                    {
+                        for (int i = 1; i <= total; i++) pages.Add(i);
+                    }
+                    else
+                    {
+                        // Always show first page
+                        pages.Add(1);
+
+                        int start = Math.Max(2, current - 2);
+                        int end = Math.Min(total - 1, current + 2);
+
+                        // Adjust window when close to the ends
+                        if (current <= 4)
+                        {
+                            start = 2;
+                            end = 5;
+                        }
+                        else if (current >= total - 3)
+                        {
+                            start = total - 4;
+                            end = total - 1;
+                        }
+
+                        if (start > 2)
+                        {
+                            pages.Add(null); // left ellipsis
+                        }
+
+                        for (int i = start; i <= end; i++) pages.Add(i);
+
+                        if (end < total - 1)
+                        {
+                            pages.Add(null); // right ellipsis
+                        }
+
+                        // Always show last page
+                        pages.Add(total);
+                    }
+
+                    foreach (var p in pages)
+                    {
+                        if (p == null)
+                        {
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        }
+                        else
+                        {
+                            var i = p.Value;
+                            <li class="page-item @(i == Model.Page ? "active" : "")">
+                                <a class="page-link" asp-action="Index" asp-controller="TradeReconciliation" asp-route-instrument="@Model.SelectedInstrument" asp-route-page="@i" asp-route-pageSize="@Model.PageSize">@i</a>
+                            </li>
+                        }
+                    }
                 }
 
                 <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">

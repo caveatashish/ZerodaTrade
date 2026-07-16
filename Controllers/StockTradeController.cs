@@ -164,14 +164,34 @@ namespace ZerodaTrade.Controllers
                 return BadRequest("Invalid date");
             }
 
+            var start = theDate.Date;
+            var end = start.AddDays(1);
+
+            // Load trades for the instrument for that specific date (server-side range filter)
             var trades = await _context.Trades
-                          .Where(t => t.Instrument == instrument && t.FillTime.Date <= theDate.Date)
-                          .OrderByDescending(t => t.FillTime)   // latest first
-                          .Take(5)                             // only last 15 records
+                          .Where(t => t.Instrument == instrument && t.FillTime >= start && t.FillTime < end)
+                          .OrderByDescending(t => t.FillTime)
                           .ToListAsync();
 
+            // Group trades by Date part of FillTime, Type, Instrument and AvgPrice and sum Qty
+            var grouped = trades
+                .GroupBy(t => new { Date = t.FillTime.Date, Type = (t.Type ?? string.Empty).ToLowerInvariant(), t.Instrument, t.AvgPrice })
+                .Select(g => new Trade
+                {
+                    // use the earliest time for the representative FillTime (keeps ordering by time)
+                    FillTime = g.Min(x => x.FillTime),
+                    Type = g.First().Type,
+                    Instrument = g.Key.Instrument,
+                    CNC = g.First().CNC,
+                    Qty = g.Sum(x => x.Qty),
+                    AvgPrice = g.Key.AvgPrice,
+                    // keep CreatedDate as earliest created date in the group (optional)
+                    CreatedDate = g.Min(x => x.CreatedDate)
+                })
+                .OrderByDescending(t => t.FillTime)
+                .ToList();
 
-            return PartialView("_DayTrades", trades);
+            return PartialView("_DayTrades", grouped);
         }
 
 
