@@ -1,0 +1,36 @@
+@model ZerodaTrade.Models.DayBuySellDiff
+
+<div class="border rounded p-2" style="width:100%;">
+    <h6 class="mb-2">Intraday Price Diff</h6>
+    <table class="table table-sm" style="margin-bottom:0;">
+        <thead class="table-light">
+            <tr>
+                <th style="width:90px;">Intraday</th>
+                <th class="text-end">Buy-&gt;Sell</th>
+                <th class="text-end">Sell-&gt;Buy</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="fw-bold bg-warning">Buy</td>
+                <td class="text-end">@((Model.BuyToSell_BuyPrice.HasValue) ? Model.BuyToSell_BuyPrice.Value.ToString("N2") : "-")</td>
+                <td class="text-end">@((Model.SellToBuy_BuyPrice.HasValue) ? Model.SellToBuy_BuyPrice.Value.ToString("N2") : "-")</td>
+            </tr>
+            <tr>
+                <td class="fw-bold bg-warning">Sell</td>
+                <td class="text-end">@((Model.BuyToSell_SellPrice.HasValue) ? Model.BuyToSell_SellPrice.Value.ToString("N2") : "-")</td>
+                <td class="text-end">@((Model.SellToBuy_SellPrice.HasValue) ? Model.SellToBuy_SellPrice.Value.ToString("N2") : "-")</td>
+            </tr>
+            <tr>
+                <td class="fw-bold bg-warning">P/L</td>
+                <td class="text-end">@((Model.BuyToSell_Diff.HasValue) ? Model.BuyToSell_Diff.Value.ToString("N2") : "-")</td>
+                <td class="text-end">@((Model.SellToBuy_Diff.HasValue) ? Model.SellToBuy_Diff.Value.ToString("N2") : "-")</td>
+            </tr>
+            <tr>
+                <td class="fw-bold bg-warning">%</td>
+                <td class="text-end">@((Model.BuyToSell_Percent.HasValue) ? Model.BuyToSell_Percent.Value.ToString("N2") + "%" : "-")</td>
+                <td class="text-end">@((Model.SellToBuy_Percent.HasValue) ? Model.SellToBuy_Percent.Value.ToString("N2") + "%" : "-")</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

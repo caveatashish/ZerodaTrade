@@ -38,7 +38,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller=StockTrade}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 // Map Razor Pages

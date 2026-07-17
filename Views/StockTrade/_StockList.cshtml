@@ -10,7 +10,7 @@
                        title="@s.Name"
                        class="stock-link flex-grow-1 text-decoration-none"
                        data-instrument="@s.Name">
-                        @s.Name
+                        @(s.Name.Length > 8 ? s.Name.Substring(0, 8) + "." : s.Name)
                     </a>
                 </div>
             </div>

@@ -8,46 +8,46 @@
     string totalPlClass = totalProfit > 0 ? "text-success" : (totalProfit < 0 ? "text-danger" : "text-muted");
 }
 <div class="card shadow-sm">
-  <div class="card-body p-3">
-    <h6 class="card-title mb-3">
+  <div class="card-body p-1">
+    <h6 class="card-title mb-0">
       @($"{stat.ScriptName} - {stat.TotalBuyQty - stat.TotalSellQty}")
     </h6>
 
-    <div class="row text-center gx-3 gy-3">
+    <div class="row text-center gx-1 gy-1">
       
       <!-- BUY Column -->
       <div class="col-4 section-buy">
-        <div class="fw-bold text-success mb-2">
+        <div class="fw-bold text-success mb-1">
           <i class="bi bi-graph-up-arrow"></i> BUY
         </div>
         <div class="small text-muted">Avg</div>
-        <div class="fw-bold mb-2">@stat.AvgBuyPrice.ToString("N0")</div>
+        <div class="fw-bold mb-1">@stat.AvgBuyPrice.ToString("N0")</div>
         <div class="small text-muted">Qty</div>
-        <div class="mb-2">@stat.TotalBuyQty</div>
+        <div class="mb-1">@stat.TotalBuyQty</div>
         <div class="small text-muted">Min</div>
         <div class="fw-bold">@stat.MinBuyPrice.ToString("N0")</div>
       </div>
 
       <!-- SELL Column -->
       <div class="col-4 section-sell">
-        <div class="fw-bold text-danger mb-2">
+        <div class="fw-bold text-danger mb-1">
           <i class="bi bi-graph-down-arrow"></i> SELL
         </div>
         <div class="small text-muted">Avg</div>
-        <div class="fw-bold mb-2">@stat.AvgSellPrice.ToString("N0")</div>
+        <div class="fw-bold mb-1">@stat.AvgSellPrice.ToString("N0")</div>
         <div class="small text-muted">Qty</div>
-        <div class="mb-2">@stat.TotalSellQty</div>
+        <div class="mb-1">@stat.TotalSellQty</div>
         <div class="small text-muted">Max</div>
         <div class="fw-bold">@stat.MaxSellPrice.ToString("N0")</div>
       </div>
 
       <!-- P/L Column -->
       <div class="col-4 section-pl">
-        <div class="fw-bold text-primary mb-2">
+        <div class="fw-bold text-primary mb-1">
           <i class="bi bi-currency-dollar"></i> P/L
         </div>
         <div class="small text-muted">Per Share</div>
-        <div class="fw-bold @plClass mb-2">@perShare.ToString("N2")</div>
+        <div class="fw-bold @plClass mb-1">@perShare.ToString("N2")</div>
         <div class="small text-muted">Total</div>
         <div class="fw-bold @totalPlClass">@totalProfit.ToString("N0")</div>
       </div>

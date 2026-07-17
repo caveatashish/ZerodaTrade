@@ -49,6 +49,11 @@
             </div>
         </div>
 
+        <div id="middleBody" class="mb-3 border rounded p-2">
+            <h5 class="mb-1">Intraday Price Diff</h5>
+            <div id="dayDiff" class="text-muted">Select a day from the trades table to view buy/sell diffs.</div>
+        </div>
+
         <!-- Lower block: Day Trade -->
         <div class="flex-grow-1 border rounded p-2">
             <h5>Day Trade</h5>
@@ -116,13 +121,95 @@
         });
 
         // when clicking on a summary row load detailed trades for that day
+        // and compute intraday diffs for three columns: Same Day, Buy->Sell, Sell->Buy
         $(document).on('click', '#tradeTable .summary-row', function(){
             var instrument = $(this).data('instrument');
             var date = $(this).data('date');
             if(!instrument || !date) return;
+
+            // load detailed trades (server)
             $.get('/StockTrade/GetDayTrades', { instrument: instrument, date: date }, function(html){
                 $('#SpecififDayTrade').html(html);
             });
+
+            var $row = $(this);
+            var $next = $row.next('tr');
+
+            function parseNum(text){
+                if(!text) return null;
+                var cleaned = text.replace(/,/g, '').replace(/[^0-9.\-]/g,'').trim();
+                if(cleaned === '') return null;
+                var v = parseFloat(cleaned);
+                return isNaN(v) ? null : v;
+            }
+
+            // columns: 0=date,1=buyQty,2=buyAvg,3=buyTotal,4=sellQty,5=sellAvg,6=sellTotal
+            var buyAvg_curr = parseNum($row.find('td').eq(2).text());
+            var sellAvg_curr = parseNum($row.find('td').eq(5).text());
+            var buyAvg_next = $next.length ? parseNum($next.find('td').eq(2).text()) : null;
+            var sellAvg_next = $next.length ? parseNum($next.find('td').eq(5).text()) : null;
+
+            // Prepare values for three columns
+            var same = { buy: null, sell: null, diff: null, pct: null };
+            var bs = { buy: null, sell: null, diff: null, pct: null };
+            var sb = { sell: null, buy: null, diff: null, pct: null };
+
+            // Same-day (both buy and sell present in the same row)
+            if(buyAvg_curr !== null && sellAvg_curr !== null){
+                same.buy = buyAvg_curr;
+                same.sell = sellAvg_curr;
+                same.diff = same.sell - same.buy;
+                same.pct = same.buy !== 0 ? (same.diff / same.buy) * 100 : null;
+            }
+
+            // Buy -> Sell (current row buy and next row sell)
+            if(buyAvg_curr !== null && sellAvg_next !== null){
+                bs.buy = buyAvg_curr;
+                bs.sell = sellAvg_next;
+                bs.diff = bs.sell - bs.buy;
+                bs.pct = bs.buy !== 0 ? (bs.diff / bs.buy) * 100 : null;
+            }
+
+            // Sell -> Buy (current row sell and next row buy)
+            if(sellAvg_curr !== null && buyAvg_next !== null){
+                sb.sell = sellAvg_curr;
+                sb.buy = buyAvg_next;
+                sb.diff = sb.sell - sb.buy;
+                sb.pct = sb.sell !== 0 ? (sb.diff / sb.sell) * 100 : null;
+            }
+
+            function fmt(val){ return val === null ? '-' : Number(val).toFixed(2); }
+            function fmtt(val){ return val === null ? '-' : (Number(val).toFixed(2) + (val !== null ? '' : '')); }
+            function fmtPct(val){ return val === null ? '-' : Number(val).toFixed(2) + '%'; }
+
+            var html = '<div class="border rounded p-2" style="width:100%;">' +
+                       '<h6 class="mb-2">Intraday Price Diff</h6>' +
+                       '<table class="table table-sm" style="margin-bottom:0;">' +
+                       '<thead class="table-light"><tr><th style="width:60px;"></th><th class="text-end">Same Day</th><th class="text-end">Buy-&gt;Sell</th><th class="text-end">Sell-&gt;Buy</th></tr></thead>' +
+                       '<tbody>' +
+                       '<tr><td class="fw-bold bg-warning">Buy</td>' +
+                       '<td class="text-end">' + fmt(same.buy) + '</td>' +
+                       '<td class="text-end">' + fmt(bs.buy) + '</td>' +
+                       '<td class="text-end">' + fmt(sb.buy) + '</td>' +
+                       '</tr>' +
+                       '<tr><td class="fw-bold bg-warning">Sell</td>' +
+                       '<td class="text-end">' + fmt(same.sell) + '</td>' +
+                       '<td class="text-end">' + fmt(bs.sell) + '</td>' +
+                       '<td class="text-end">' + fmt(sb.sell) + '</td>' +
+                       '</tr>' +
+                       '<tr><td class="fw-bold bg-warning">P/L</td>' +
+                       '<td class="text-end">' + fmt(same.diff) + '</td>' +
+                       '<td class="text-end">' + fmt(bs.diff) + '</td>' +
+                       '<td class="text-end">' + fmt(sb.diff) + '</td>' +
+                       '</tr>' +
+                       '<tr><td class="fw-bold bg-warning">%</td>' +
+                       '<td class="text-end">' + fmtPct(same.pct) + '</td>' +
+                       '<td class="text-end">' + fmtPct(bs.pct) + '</td>' +
+                       '<td class="text-end">' + fmtPct(sb.pct) + '</td>' +
+                       '</tr>' +
+                       '</tbody></table></div>';
+
+            $('#dayDiff').html(html);
         });
 
         // on initial load, if no group selected, show recent trades (last 5 days)

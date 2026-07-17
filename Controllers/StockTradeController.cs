@@ -194,6 +194,64 @@ namespace ZerodaTrade.Controllers
             return PartialView("_DayTrades", grouped);
         }
 
+        // return intraday buy->sell and sell->buy price differences for a given instrument and date
+        [HttpGet]
+        public async Task<IActionResult> GetDayDiff(string instrument, string date)
+        {
+            if (string.IsNullOrWhiteSpace(instrument) || string.IsNullOrWhiteSpace(date)) return BadRequest();
+
+            if (!DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var theDate))
+            {
+                return BadRequest("Invalid date");
+            }
+
+            var start = theDate.Date;
+            var end = start.AddDays(1);
+
+            var trades = await _context.Trades
+                          .Where(t => t.Instrument == instrument && t.FillTime >= start && t.FillTime < end)
+                          .OrderBy(t => t.FillTime)
+                          .ToListAsync();
+
+            var model = new Models.DayBuySellDiff
+            {
+                Date = theDate.Date,
+                Instrument = instrument
+            };
+
+            // Buy -> Sell: first buy then next sell after that
+            var firstBuy = trades.FirstOrDefault(t => (t.Type ?? string.Empty).Equals("buy", StringComparison.OrdinalIgnoreCase));
+            if (firstBuy != null)
+            {
+                var nextSell = trades.FirstOrDefault(t => (t.Type ?? string.Empty).Equals("sell", StringComparison.OrdinalIgnoreCase) && t.FillTime > firstBuy.FillTime);
+                if (nextSell != null)
+                {
+                    model.BuyToSell_BuyPrice = firstBuy.AvgPrice;
+                    model.BuyToSell_SellPrice = nextSell.AvgPrice;
+                    model.BuyToSell_Diff = nextSell.AvgPrice - firstBuy.AvgPrice;
+                    if (firstBuy.AvgPrice != 0)
+                        model.BuyToSell_Percent = (model.BuyToSell_Diff / firstBuy.AvgPrice) * 100m;
+                }
+            }
+
+            // Sell -> Buy: first sell then next buy after that
+            var firstSell = trades.FirstOrDefault(t => (t.Type ?? string.Empty).Equals("sell", StringComparison.OrdinalIgnoreCase));
+            if (firstSell != null)
+            {
+                var nextBuy = trades.FirstOrDefault(t => (t.Type ?? string.Empty).Equals("buy", StringComparison.OrdinalIgnoreCase) && t.FillTime > firstSell.FillTime);
+                if (nextBuy != null)
+                {
+                    model.SellToBuy_SellPrice = firstSell.AvgPrice;
+                    model.SellToBuy_BuyPrice = nextBuy.AvgPrice;
+                    model.SellToBuy_Diff = firstSell.AvgPrice - nextBuy.AvgPrice;
+                    if (firstSell.AvgPrice != 0)
+                        model.SellToBuy_Percent = (model.SellToBuy_Diff / (firstSell.AvgPrice)) * 100m;
+                }
+            }
+
+            return PartialView("_DayBuySellDiff", model);
+        }
+
 
 
     }
