@@ -6,3 +6,95 @@
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <strong>Market snapshot</strong>
+        </div>
+        <div class="card-body">
+            <canvas id="marketChart" width="800" height="300"></canvas>
+            <div id="chartFallback" class="text-center text-muted mt-2" style="display:none">No data available</div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        (function(){
+            const ctx = document.getElementById('marketChart');
+            if(!ctx) return;
+
+            function loadData(){
+                fetch('/ScriptStats/GetAll')
+                    .then(r => {
+                        if(!r.ok) throw new Error('Network response was not ok');
+                        return r.json();
+                    })
+                    .then(data => renderChart(data))
+                    .catch(err => {
+                        console.error(err);
+                        document.getElementById('chartFallback').style.display = '';
+                    });
+            }
+
+            let chart = null;
+            function renderChart(items){
+                if(!items || items.length === 0){
+                    document.getElementById('chartFallback').style.display = '';
+                    return;
+                }
+
+                // pick top 12 by RowCount
+                items.sort((a,b) => b.RowCount - a.RowCount);
+                const top = items.slice(0, 12);
+                const labels = top.map(x => x.ScriptName);
+                const buy = top.map(x => x.AvgBuyPrice);
+                const sell = top.map(x => x.AvgSellPrice);
+
+                const datasets = [
+                    {
+                        label: 'Avg Buy',
+                        data: buy,
+                        backgroundColor: 'rgba(40,167,69,0.7)',
+                        borderColor: 'rgba(40,167,69,1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Avg Sell',
+                        data: sell,
+                        backgroundColor: 'rgba(220,53,69,0.7)',
+                        borderColor: 'rgba(220,53,69,1)',
+                        borderWidth: 1
+                    }
+                ];
+
+                if(chart){ chart.destroy(); chart = null; }
+
+                chart = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { stacked: false },
+                            y: { beginAtZero: true }
+                        },
+                        plugins: {
+                            tooltip: { mode: 'index', intersect: false },
+                            legend: { position: 'top' }
+                        }
+                    }
+                });
+            }
+
+            // initial load
+            loadData();
+
+            // refresh every 5 minutes
+            setInterval(loadData, 5 * 60 * 1000);
+        })();
+    </script>
+}

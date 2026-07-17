@@ -38,7 +38,7 @@ else
                     <td>@t.FillTime.ToString("yyyy-MM-dd")</td>
                     <td class="@cls">@t.Type.ToUpper()</td>
                     <td class="@cls">@t.Qty</td>
-                    <td class="@cls">@String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N0}", t.AvgPrice)</td>
+                    <td class="@cls">@String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N2}", t.AvgPrice)</td>
                 </tr>
 
                 lastDate = currentDate;

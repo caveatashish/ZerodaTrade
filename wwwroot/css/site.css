@@ -98,3 +98,32 @@ body {
     border-radius: 4px;
     padding: 8px;
 }
+
+/* Highlight active navbar link */
+.nav-link.active {
+    color: #fff !important;
+    background-color: #0d6efd;
+    border-radius: 6px;
+    padding: 0.35rem 0.6rem;
+    font-weight: 600;
+}
+
+.navbar-nav .nav-item + .nav-item {
+    margin-left: 0.25rem;
+}
+
+/* Stock list link active/highlight */
+.stock-link {
+    display: block;
+    padding: 0.15rem 0.25rem;
+    color: inherit;
+}
+.stock-link.active-stock {
+    background-color: #0d6efd;
+    color: #fff !important;
+    border-radius: 4px;
+    text-decoration: none;
+}
+.stock-link.active-stock:hover {
+    color: #fff !important;
+}

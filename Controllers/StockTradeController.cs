@@ -150,7 +150,7 @@ namespace ZerodaTrade.Controllers
                 row.SellAverage = row.SellQty != 0 ? row.SellTotal / row.SellQty : 0;
             }
 
-            return PartialView("_TradeTable", summary);
+            return PartialView("_TradeTableSingleInstrument", summary);
         }
 
         // return detailed trades for a given instrument and date (date format yyyy-MM-dd)

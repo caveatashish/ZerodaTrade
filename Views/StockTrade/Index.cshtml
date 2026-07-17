@@ -14,18 +14,7 @@
                 <label class="form-check-label" for="group-@g.Id">@g.Name</label>
             </div>
 
-<style>
-    /* Prevent long stock names from causing horizontal scroll; truncate with ellipsis */
-    .stock-link {
-        display: block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
 
-    /* ensure the two-column stock item doesn't force width */
-    #stockList .col-6 { min-width: 0; }
-</style>
         }
     </div>
 </div>
@@ -39,19 +28,19 @@
     </div>
     <div class="col-md-6">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h5>Trades</h5>
+            <div style="display:flex; align-items:center;">
+                <h5 class="mb-0">Trades</h5>
+                <div id="currentInstrumentContainer" class="ms-3">
+                    <a href="#" id="currentInstrumentLink" class="btn btn-sm btn-outline-primary" style="display:none;">&nbsp;</a>
+                </div>
+            </div>
 
-            <h6>
-                <a href="/reconciliation" style="text-decoration:none; color:inherit;">
-                    Stock Reconciliation
-                </a>
-            </h6>
         </div>
         <div id="tradeTable">
             <!-- loaded via AJAX -->
         </div>
     </div>
-    <div class="col-md-4 d-flex flex-column" style="height:100%;">
+    <div class="col-md-3 d-flex flex-column" style="height:100%;">
         <!-- Upper block: Stock Stats -->
         <div class="mb-3 flex-grow-1 border rounded p-2">
             <h5>Stock Stats</h5>
@@ -85,6 +74,7 @@
                 // no group selected: clear stock list and show recent trades for last 5 days
                 $('#stockList').html('');
                 $('#SpecififDayTrade').html('');
+                $('#currentInstrumentLink').hide();
                 $.get('/StockTrade/GetRecentTrades?days=5', function(html){
                     $('#tradeTable').html(html);
                 });
@@ -93,7 +83,9 @@
             var groupId = checked.val();
             $.get('/StockTrade/GetStocks?groupId=' + groupId, function(html){
                 $('#stockList').html(html);
+                $('#stockStats').html('');
                 $('#SpecififDayTrade').html('');
+                $('#currentInstrumentLink').hide();
             });
             // also show recent trades for the selected group when no stock selected
             $.get('/StockTrade/GetRecentTradesByGroup?groupId=' + groupId + '&days=5', function(html){
@@ -105,6 +97,11 @@
         $(document).on('click', '.stock-link', function(e){
             e.preventDefault();
             var instrument = $(this).data('instrument');
+            // highlight the clicked stock in the list
+            $('.stock-link').removeClass('active-stock');
+            $(this).addClass('active-stock');
+            // update current instrument display and make it clickable
+            $('#currentInstrumentLink').text(instrument).attr('href', '/StockTrade/StockReconcile?instrument=' + encodeURIComponent(instrument)).show();
             $.get('/StockTrade/GetTrades?instrument=' + encodeURIComponent(instrument), function(html){
                 $('#tradeTable').html(html);
                 // clear specific day details when new summary loads

@@ -19,35 +19,37 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ZerodaTrade</a>
+                <a class="navbar-brand" asp-area="" asp-controller="StockTrade" asp-action="Index">ZerodaTrade</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    @{
+                        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+                        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+                    }
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="StockTrade" asp-action="Index">StockTrade</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Script" asp-action="Index">Script</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="DailyTrade" asp-action="Index">Daily Trade Upload</a>
-                        </li>
+                      
+                         <li class="nav-item">
+                             <a class="nav-link @(string.Equals(currentController, "StockTrade", System.StringComparison.OrdinalIgnoreCase) ? "active" : "text-dark")" asp-area="" asp-controller="StockTrade" asp-action="Index">StockTrade</a>
+                         </li>
+                         <li class="nav-item">
+                             <a class="nav-link @(string.Equals(currentController, "Script", System.StringComparison.OrdinalIgnoreCase) ? "active" : "text-dark")" asp-area="" asp-controller="Script" asp-action="Index">Script</a>
+                         </li>
+                         <li class="nav-item">
+                             <a class="nav-link @(string.Equals(currentController, "DailyTrade", System.StringComparison.OrdinalIgnoreCase) ? "active" : "text-dark")" asp-area="" asp-controller="DailyTrade" asp-action="Index">Daily Trade Upload</a>
+                         </li>
                      
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Groups" asp-action="Index">Groups</a>
-                        </li>
+                         <li class="nav-item">
+                             <a class="nav-link @(string.Equals(currentController, "Groups", System.StringComparison.OrdinalIgnoreCase) ? "active" : "text-dark")" asp-area="" asp-controller="Groups" asp-action="Index">Groups</a>
+                         </li>
                       @*   <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="ScriptStats" asp-action="Index">Script Stats</a>
                         </li> *@
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="TradeReconciliation" asp-action="Index">Trade Reconciliation</a>
-                        </li>
+                         <li class="nav-item">
+                             <a class="nav-link @(string.Equals(currentController, "TradeReconciliation", System.StringComparison.OrdinalIgnoreCase) ? "active" : "text-dark")" asp-area="" asp-controller="TradeReconciliation" asp-action="Index">Trade Reconciliation</a>
+                         </li>
                     </ul>
                 </div>
             </div>
