@@ -42,8 +42,12 @@ else
                 var rowClass = (r.Date.Date == serverToday || r.Date.Date == utcToday) ? "table-info"
                                : (r.Date.Date == serverYesterday || r.Date.Date == utcYesterday) ? "table-warning"
                                : "";
+                // highlight the date cell when the trade date is within the last 3 days (including today)
+                var isRecent = (r.Date.Date >= serverToday.AddDays(-3) && r.Date.Date <= serverToday)
+                               || (r.Date.Date >= utcToday.AddDays(-3) && r.Date.Date <= utcToday);
+                var dateCellClass = isRecent ? "recent-date" : string.Empty;
                 <tr class="summary-row @rowClass" data-date="@r.Date.ToString("yyyy-MM-dd")" data-instrument="@r.Instrument" style="cursor:pointer;">
-                    <td class="text-start">@(showDate ? r.Date.ToString("yyyy-MM-dd") : string.Empty)</td>
+                    <td class="text-start @dateCellClass">@(showDate ? r.Date.ToString("yyyy-MM-dd") : string.Empty)</td>
                     <td class="text-start">@r.Instrument</td>
                     <td class="no-trim">@(r.BuyQty == 0 ? string.Empty : r.BuyQty.ToString())</td>
                     <td class="no-trim">@(r.BuyAverage == 0m ? string.Empty : String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:N1}", r.BuyAverage))</td>
