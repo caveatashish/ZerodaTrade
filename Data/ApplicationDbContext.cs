@@ -15,6 +15,7 @@ namespace ZerodaTrade.Data
         public DbSet<Trade> Trades { get; set; }
 
         public DbSet<DailyTrade> DailyTrades{ get; set; }
+        public DbSet<ZerodaTrade.Models.User> Users { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 

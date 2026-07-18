@@ -15,6 +15,21 @@ namespace ZerodaTrade.Services
                 {
                     // Create database if it doesn't exist
                     context.Database.EnsureCreated();
+
+                    // Seed a default admin user if no users exist
+                    if (!context.Users.Any())
+                    {
+                        var hasher = ZerodaTrade.Helpers.PasswordHasher.HashPassword("password");
+                        var user = new ZerodaTrade.Models.User
+                        {
+                            Username = "admin",
+                            PasswordHash = hasher.hash,
+                            PasswordSalt = hasher.salt,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        context.Users.Add(user);
+                        context.SaveChanges();
+                    }
                 }
                 catch (Exception ex)
                 {
