@@ -183,9 +183,9 @@
             function fmtPct(val){ return val === null ? '-' : Number(val).toFixed(2) + '%'; }
 
             var html = '<div class="border rounded p-2" style="width:100%;">' +
-                       '<h6 class="mb-2">Intraday Price Diff</h6>' +
+                       
                        '<table class="table table-sm" style="margin-bottom:0;">' +
-                       '<thead class="table-light"><tr><th style="width:60px;"></th><th class="text-end">Same Day</th><th class="text-end">Buy-&gt;Sell</th><th class="text-end">Sell-&gt;Buy</th></tr></thead>' +
+                       '<thead class="table-light"><tr><th style="width:40px;"></th><th class="text-end">Same Day</th><th class="text-end">Buy-&gt;Sell</th><th class="text-end">Sell-&gt;Buy</th></tr></thead>' +
                        '<tbody>' +
                        '<tr><td class="fw-bold bg-warning">Buy</td>' +
                        '<td class="text-end">' + fmt(same.buy) + '</td>' +
@@ -219,4 +219,94 @@
             });
         }
     });
+</script>
+
+<script>
+    // Hide the Intraday Price Diff block (#middleBody) when the loaded trade table includes an "Instrument" column.
+    (function(){
+        function tableHasInstrumentColumn(container){
+            if(!container) return false;
+            // look for header th containing 'Instrument' (case-insensitive)
+            var headers = container.querySelectorAll('table thead th');
+            for(var i=0;i<headers.length;i++){
+                if(headers[i].textContent && headers[i].textContent.trim().toLowerCase().indexOf('instrument') !== -1){
+                    return true;
+                }
+            }
+            // fallback: look for any cell in first body row that looks like an instrument (non-numeric text)
+            var firstRow = container.querySelector('table tbody tr');
+            if(firstRow){
+                var cells = firstRow.querySelectorAll('td');
+                for(var j=0;j<cells.length;j++){
+                    var txt = (cells[j].textContent||'').trim();
+                    // crude heuristic: instrument names often contain letters and are not just numbers or dates
+                    if(txt && /[A-Za-z]/.test(txt) && txt.length>1){
+                        // if header count matches and there's a distinct instrument column, treat as present
+                        // we cannot be certain, so prefer header detection; this is a fallback
+                        return false; // fallback should not hide unless header explicitly indicates
+                    }
+                }
+            }
+            return false;
+        }
+
+        function updateDayDiffVisibility(){
+            var container = document.getElementById('tradeTable');
+            var middle = document.getElementById('middleBody');
+            if(!container || !middle) return;
+            var hasInstrument = tableHasInstrumentColumn(container);
+            if(hasInstrument){
+                middle.style.display = 'none';
+            } else {
+                middle.style.display = '';
+            }
+        }
+
+        // observe changes to the tradeTable container so we can re-evaluate when AJAX replaces content
+        var target = document.getElementById('tradeTable');
+        if(target){
+            var mo = new MutationObserver(function(mutations){
+                // small delay to allow HTML to settle
+                setTimeout(updateDayDiffVisibility, 10);
+            });
+            mo.observe(target, { childList: true, subtree: true });
+        }
+
+        // also run on initial page load
+        if(document.readyState === 'complete' || document.readyState === 'interactive'){
+            setTimeout(updateDayDiffVisibility, 20);
+        } else {
+            document.addEventListener('DOMContentLoaded', function(){ setTimeout(updateDayDiffVisibility, 20); });
+        }
+    })();
+</script>
+
+<style>
+    /* make trade table rows visibly clickable when present */
+    #tradeTable table tbody tr { cursor: pointer; }
+    #tradeTable table tbody tr td { transition: background-color .12s ease-in-out; }
+    /* ensure selected row is visibly highlighted even when table doesn't use Bootstrap's .table */
+    #tradeTable table tbody tr.table-primary td {
+        background-color: #cfe2ff !important; /* match Bootstrap primary row */
+        color: #000 !important;
+    }
+</style>
+
+<script>
+    // delegated handler to highlight a single clicked row inside #tradeTable
+    (function(){
+        var $container = $('#tradeTable');
+        if(!$container.length) return;
+
+        // handle clicks on any row (delegated) so dynamically loaded partials work
+        $container.on('click', 'tbody tr', function(){
+            var $rows = $container.find('tbody tr');
+            $rows.removeClass('table-primary');
+            $(this).addClass('table-primary');
+
+            // capture id if provided by the row (common data attributes)
+            var id = $(this).data('trade-id') || $(this).data('id') || '';
+            $container.attr('data-selected-trade-id', id);
+        });
+    })();
 </script>
