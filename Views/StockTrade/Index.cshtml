@@ -4,16 +4,15 @@
     ViewData["Title"] = "Stock Trades";
 }
 
-<div class="d-flex align-items-center mb-3">
+    <div class="d-flex align-items-center mb-3">
     <h2 class="me-4">Stock Trades</h2>
-    <div id="groupList" class="d-flex flex-row flex-nowrap overflow-auto border rounded p-2 ms-auto" style="min-width:300px; max-width:70%">
+    <div id="groupList" class="d-flex flex-row flex-nowrap overflow-auto border rounded p-2" style="min-width:300px; max-width:70%">
         @foreach (var g in Model)
         {
             <div class="form-check me-3">
                 <input class="form-check-input group-checkbox" type="checkbox" value="@g.Id" id="group-@g.Id" />
                 <label class="form-check-label" for="group-@g.Id">@g.Name</label>
             </div>
-
 
         }
     </div>
