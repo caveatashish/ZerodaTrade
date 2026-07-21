@@ -48,17 +48,19 @@
             </div>
         </div>
 
-        <div id="middleBody" class="mb-3 border rounded p-2">
-            <h5 class="mb-1">Intraday Price Diff</h5>
-            <div id="dayDiff" class="text-muted">Select a day from the trades table to view buy/sell diffs.</div>
-        </div>
+      
 
         <!-- Lower block: Day Trade -->
-        <div class="flex-grow-1 border rounded p-2">
+        <div class="flex-grow-1 border rounded p-2 mb-3">
             <h5>Day Trade</h5>
             <div id="SpecififDayTrade">
                 <!-- detailed trades for selected day will load here -->
             </div>
+        </div>
+
+        <div id="middleBody" class="border rounded p-2">
+            <h5 class="mb-1">Intraday Price Diff</h5>
+            <div id="dayDiff" class="text-muted">Select a day from the trades table to view buy/sell diffs.</div>
         </div>
     </div>
 
@@ -78,6 +80,7 @@
                 // no group selected: clear stock list and show recent trades for last 5 days
                 $('#stockList').html('');
                 $('#SpecififDayTrade').html('');
+                 $('#dayDiff').html('');
                 $('#currentInstrumentLink').hide();
                 $.get('/StockTrade/GetRecentTrades?days=5', function(html){
                     $('#tradeTable').html(html);
@@ -110,6 +113,8 @@
                 $('#tradeTable').html(html);
                 // clear specific day details when new summary loads
                 $('#SpecififDayTrade').html('');
+
+                  $('#dayDiff').html('');
                 // load stats for selected stock into the stockStats div
                 $.get('/ScriptStats/GetByInstrument?instrument=' + encodeURIComponent(instrument), function(partialHtml){
                     $('#stockStats').html(partialHtml);
@@ -184,7 +189,7 @@
             var html = '<div class="border rounded p-2" style="width:100%;">' +
                        
                        '<table class="table table-sm" style="margin-bottom:0;">' +
-                       '<thead class="table-light"><tr><th style="width:40px;"></th><th class="text-end">Same Day</th><th class="text-end">Buy-&gt;Sell</th><th class="text-end">Sell-&gt;Buy</th></tr></thead>' +
+                       '<thead class="table-light"><tr><th style="width:40px;"></th><th class="text-end">Day</th><th class="text-end">B-&gt;S</th><th class="text-end">S-&gt;B</th></tr></thead>' +
                        '<tbody>' +
                        '<tr><td class="fw-bold bg-warning">Buy</td>' +
                        '<td class="text-end">' + fmt(same.buy) + '</td>' +
