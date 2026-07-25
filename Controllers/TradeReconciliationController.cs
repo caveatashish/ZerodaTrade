@@ -116,6 +116,7 @@ namespace ZerodaTrade.Controllers
                     }
                 }
 
+
                 ZerodaTrade.Models.Script? scriptEntity = null;
 
                 if (!string.IsNullOrWhiteSpace(mappedScriptValue))
@@ -238,6 +239,113 @@ namespace ZerodaTrade.Controllers
             _context.Trades.Remove(trade);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+
+        // GET: /TradeReconciliation/Add
+        [HttpGet]
+        public async Task<IActionResult> Add()
+        {
+            // provide a list of known scripts to help the user (will pass Id + Name)
+            var scripts = await _context.Scripts.OrderBy(s => s.Name).ToListAsync();
+            ViewBag.Scripts = scripts;
+
+            var model = new Trade
+            {
+                FillTime = DateTime.UtcNow,
+                Type = "buy",
+                CNC = false,
+                Qty = 1,
+                AvgPrice = 0m
+            };
+            return View(model);
+        }
+
+        // POST: /TradeReconciliation/Add
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Add([Bind("TradeId,FillTime,Type,Instrument,CNC,Qty,AvgPrice,ScriptId")] Trade newTrade)
+        {
+            if (newTrade == null) return BadRequest();
+
+            // Defensive: ensure ScriptId is read from the posted form if model binding missed it
+            if (newTrade.ScriptId == 0)
+            {
+                var formScriptId = Request.Form["ScriptId"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(formScriptId) && int.TryParse(formScriptId, out var parsedId))
+                {
+                    newTrade.ScriptId = parsedId;
+                }
+            }
+
+            // basic server-side validation
+            if (string.IsNullOrWhiteSpace(newTrade.Instrument))
+            {
+                ModelState.AddModelError("Instrument", "Instrument is required.");
+            }
+            if (newTrade.Qty <= 0)
+            {
+                ModelState.AddModelError("Qty", "Quantity must be greater than zero.");
+            }
+
+            // supply scripts list again for the view if validation fails
+            ViewBag.Scripts = await _context.Scripts.OrderBy(s => s.Name).ToListAsync();
+            // set audit fields
+            newTrade.CreatedDate = DateTime.UtcNow;
+            newTrade.ModifiedDate = DateTime.UtcNow;
+
+            // Ignore validation errors caused by the Script navigation property (and any sub-keys like Script.Id)
+            var scriptKeys = ModelState.Keys
+                .Where(k => k.StartsWith("Script", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            foreach (var key in scriptKeys)
+            {
+                ModelState.Remove(key);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(newTrade);
+            }
+
+            // ensure a unique legacy TradeId (use ticks if not supplied)
+            if (newTrade.TradeId == 0)
+            {
+                newTrade.TradeId = DateTime.UtcNow.Ticks;
+            }
+
+            // attempt to resolve Script by ScriptId (preferred) or by name
+            ZerodaTrade.Models.Script? script = null;
+            if (newTrade.ScriptId != 0)
+            {
+                script = await _context.Scripts.FindAsync(newTrade.ScriptId);
+            }
+            // fallback: if no script found by id, but instrument name was provided in the form separately (e.g. JS), try to read it
+            if (script == null)
+            {
+                var formInstrument = Request.Form["Instrument"].FirstOrDefault();
+                var instToCheck = !string.IsNullOrWhiteSpace(formInstrument) ? formInstrument.Trim() : newTrade.Instrument?.Trim();
+                if (!string.IsNullOrWhiteSpace(instToCheck))
+                {
+                    script = await _context.Scripts.FirstOrDefaultAsync(s => s.Name.ToLower() == instToCheck.ToLower());
+                    // if found and ScriptId was missing, set it
+                    if (script != null && newTrade.ScriptId == 0)
+                    {
+                        newTrade.ScriptId = script.Id;
+                    }
+                }
+            }
+            if (script != null)
+            {
+                newTrade.ScriptId = script.Id;
+                newTrade.Script = script;
+                // ensure Instrument matches the script name
+                newTrade.Instrument = script.Name;
+            }
+
+            _context.Trades.Add(newTrade);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index), new { instrument = newTrade.Instrument });
         }
 
         private bool TradeExists(int id)

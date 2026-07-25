@@ -1,0 +1,81 @@
+@model ZerodaTrade.Models.Trade
+
+@{
+    ViewData["Title"] = "Add Trade";
+}
+
+<div class="container mt-3">
+    <h2>@ViewData["Title"]</h2>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">Please correct the errors below.</div>
+    }
+
+    <form asp-action="Add" method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label for="FillTime" class="form-label">Fill Time</label>
+            <input type="datetime-local" class="form-control" name="FillTime" id="FillTime" value="@Model.FillTime.ToString("yyyy-MM-ddTHH:mm")" />
+        </div>
+
+        <div class="mb-3">
+            <label for="Type" class="form-label">Type</label>
+            <select name="Type" id="Type" class="form-select">
+                <option value="buy" selected="@(Model.Type == "buy" ? "selected" : null)">Buy</option>
+                <option value="sell" selected="@(Model.Type == "sell" ? "selected" : null)">Sell</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="ScriptId" class="form-label">Instrument</label>
+            <select name="ScriptId" id="ScriptId" class="form-select">
+                <option value="">-- Select instrument --</option>
+                @if (ViewBag.Scripts != null)
+                {
+                    foreach (var s in (List<ZerodaTrade.Models.Script>)ViewBag.Scripts)
+                    {
+                        <option value="@s.Id" selected="@(Model.ScriptId == s.Id ? "selected" : null)">@s.Name</option>
+                    }
+                }
+            </select>
+            <!-- hidden field to send instrument name along with ScriptId -->
+            <input type="hidden" id="Instrument" name="Instrument" value="@Model.Instrument" />
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="CNC" name="CNC" value="true" @(Model.CNC == true ? "checked" : null) />
+            <label class="form-check-label" for="CNC">CNC (Delivery)</label>
+        </div>
+
+        <div class="mb-3">
+            <label for="Qty" class="form-label">Qty</label>
+            <input type="number" class="form-control" id="Qty" name="Qty" min="1" value="@Model.Qty" />
+        </div>
+
+        <div class="mb-3">
+            <label for="AvgPrice" class="form-label">Avg Price</label>
+            <input type="number" step="0.01" class="form-control" id="AvgPrice" name="AvgPrice" value="@Model.AvgPrice" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add Trade</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+
+<script>
+    (function(){
+        var $scriptSelect = document.getElementById('ScriptId');
+        var $instrumentHidden = document.getElementById('Instrument');
+        function syncInstrument(){
+            if(!$scriptSelect || !$instrumentHidden) return;
+            var opt = $scriptSelect.options[$scriptSelect.selectedIndex];
+            $instrumentHidden.value = opt && opt.value ? opt.text : '';
+        }
+        if($scriptSelect){
+            $scriptSelect.addEventListener('change', syncInstrument);
+            // initialize on load
+            syncInstrument();
+        }
+    })();
+</script>
