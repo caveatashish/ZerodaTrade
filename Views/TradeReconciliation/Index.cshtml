@@ -8,7 +8,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>@ViewData["Title"]</h2>
         <form method="get" class="d-flex gap-2 align-items-center">
-            <a asp-action="Add" asp-controller="TradeReconciliation" class="btn btn-success btn-sm py-0">Add Trade</a>
+            <a asp-action="Add" asp-controller="TradeReconciliation" class="btn btn-success me-2" style="min-width:110px; white-space:nowrap;">Add Trade</a>
             <select name="instrument" class="form-select">
                 <option value="">-- All Instruments --</option>
                 @foreach (var inst in Model.Instruments)
