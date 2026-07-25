@@ -1,6 +1,6 @@
 @model IEnumerable<ZerodaTrade.Models.Script>
 
-<div style="max-height:60vh; overflow-y:auto; overflow-x:hidden;">
+<div style="max-height:90vh; overflow-y:auto; overflow-x:hidden;">
     <div class="row">
         @foreach (var s in Model)
         {
@@ -10,7 +10,7 @@
                        title="@s.Name"
                        class="stock-link flex-grow-1 text-decoration-none"
                        data-instrument="@s.Name">
-                        @(s.Name.Length > 8 ? s.Name.Substring(0, 8) + "." : s.Name)
+                        @(s.Name.Length >7 ? s.Name.Substring(0, 7) + "." : s.Name)
                     </a>
                 </div>
             </div>
