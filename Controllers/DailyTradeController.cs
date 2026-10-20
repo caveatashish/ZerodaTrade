@@ -40,6 +40,7 @@ namespace ZerodaTrade.Controllers
             }
 
             var trades = new List<DailyTrade>();
+            var readErrors = new List<string>();
             using (var stream = file.OpenReadStream())
             using (var reader = new System.IO.StreamReader(stream))
             {
@@ -47,60 +48,81 @@ namespace ZerodaTrade.Controllers
                 var headerLine = await reader.ReadLineAsync();
                 // simple CSV parsing: supports quoted values
                 long counter = 0;
+                var lineNumber = 1;
                 while (!reader.EndOfStream)
                 {
-                    var line = await reader.ReadLineAsync();
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-                    var parts = ParseCsvLine(line);
-
-                    // Expected columns (order): FillTime,Type,Instrument,CNC,Qty,AvgPrice
-                    if (parts.Length < 6) continue;
-
-                    var tradeId = Convert.ToInt64( parts[0]);
-
-                    DateTime fillTime;
-                    var dateStr = parts[1].Trim();
-                    // Try dd-MM-yyyy formats first (day-month-year)
-                    var dateFormats = new[] { "dd-MM-yyyy", "d-M-yyyy", "dd-MM-yyyy HH:mm:ss", "d-M-yyyy H:m:s", "dd/MM/yyyy", "d/M/yyyy" };
-                    if (!DateTime.TryParseExact(dateStr, dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out fillTime))
+                    lineNumber++;
+                    try
                     {
-                        // fallback to general parse
-                        DateTime.TryParse(dateStr, out fillTime);
+                        var line = await reader.ReadLineAsync();
+                        if (string.IsNullOrWhiteSpace(line)) continue;
+                        var parts = ParseCsvLine(line);
+
+                        // Expected columns (order): TradeId,FillTime,Type,Instrument,CNC,Qty,AvgPrice
+                        if (parts.Length < 7)
+                        {
+                            readErrors.Add($"Line {lineNumber}: Expected 7 columns but found {parts.Length}.");
+                            break;
+                        }
+
+                        var tradeId = Convert.ToInt64(parts[0]);
+
+                        DateTime fillTime;
+                        var dateStr = parts[1].Trim();
+                        // Try dd-MM-yyyy formats first (day-month-year)
+                        var dateFormats = new[] { "dd-MM-yyyy", "d-M-yyyy", "dd-MM-yyyy HH:mm:ss", "d-M-yyyy H:m:s", "dd/MM/yyyy", "d/M/yyyy" };
+                        if (!DateTime.TryParseExact(dateStr, dateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out fillTime))
+                        {
+                            // fallback to general parse
+                            DateTime.TryParse(dateStr, out fillTime);
+                        }
+
+                        var type = parts[2];
+                        var instrument = parts[3];
+
+                        bool? cnc = null;
+                        if (!string.IsNullOrWhiteSpace(parts[4]))
+                        {
+                            if (bool.TryParse(parts[4], out var b)) cnc = b;
+                            else if (int.TryParse(parts[4], out var iVal)) cnc = iVal != 0;
+                        }
+
+                        int qty = 0;
+                        int.TryParse(parts[5], out qty);
+
+                        decimal avgPrice = 0;
+                        decimal.TryParse(parts[6], NumberStyles.Any, CultureInfo.InvariantCulture, out avgPrice);
+
+                        counter++;
+                        var trade = new DailyTrade
+                        {
+                            // TradeId is not DB-generated in this model; generate unique value
+                            TradeId = tradeId,
+                            FillTime = fillTime,
+                            Type = type,
+                            Instrument = instrument,
+                            CNC = cnc,
+                            Qty = qty,
+                            AvgPrice = avgPrice,
+                            CreatedDate = DateTime.UtcNow,
+                            ModifiedDate = DateTime.UtcNow
+                        };
+
+                        trades.Add(trade);
                     }
-
-                    var type = parts[2];
-                    var instrument = parts[3];
-
-                    bool? cnc = null;
-                    if (!string.IsNullOrWhiteSpace(parts[4]))
+                    catch (Exception ex)
                     {
-                        if (bool.TryParse(parts[3], out var b)) cnc = b;
-                        else if (int.TryParse(parts[3], out var iVal)) cnc = iVal != 0;
+                        readErrors.Add($"Line {lineNumber}: {ex.Message}");
+                        break;
                     }
-
-                    int qty = 0;
-                    int.TryParse(parts[5], out qty);
-
-                    decimal avgPrice = 0;
-                    decimal.TryParse(parts[6], NumberStyles.Any, CultureInfo.InvariantCulture, out avgPrice);
-
-                    counter++;
-                    var trade = new DailyTrade
-                    {
-                        // TradeId is not DB-generated in this model; generate unique value
-                        TradeId = tradeId,
-                        FillTime = fillTime,
-                        Type = type,
-                        Instrument = instrument,
-                        CNC = cnc,
-                        Qty = qty,
-                        AvgPrice = avgPrice,
-                        CreatedDate = DateTime.UtcNow,
-                        ModifiedDate = DateTime.UtcNow
-                    };
-
-                    trades.Add(trade);
                 }
+            }
+
+            if (readErrors.Count > 0)
+            {
+                ViewBag.Error = "The following errors occurred while reading the file:\n" + string.Join("\n", readErrors);
+                var recent = await _context.DailyTrades.OrderByDescending(d => d.CreatedDate).Take(500).ToListAsync();
+                return View(recent);
             }
 
             if (trades.Count > 0)
